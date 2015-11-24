@@ -24,15 +24,17 @@ func UpCommand(ui *Ui, input UpCommandInput) {
 	if os.IsNotExist(err) {
 		ui.Debug.Println("Config doesn't exist, creating one")
 
-		if input.StackName == "" {
-			input.StackName = stackName(input.Dir)
+		stackName := input.StackName
+
+		if stackName == "" {
+			stackName = stackNameFromDir(input.Dir)
+
+			if err = createEcsCluster(stackName, input.Templates, input.Cluster); err != nil {
+				ui.Fatal(err)
+			}
 		}
 
-		if err = createEcsCluster(input.StackName, input.Templates, input.Cluster); err != nil {
-			ui.Fatal(err)
-		}
-
-		events, errs := pollStack(cloudformation.New(session.New()), input.StackName)
+		events, errs := pollStack(cloudformation.New(session.New()), stackName)
 
 		for event := range events {
 			ui.Println(eventString(event))
@@ -48,7 +50,7 @@ func UpCommand(ui *Ui, input UpCommandInput) {
 	log.Printf("%#v", cfg)
 }
 
-func stackName(dir string) string {
+func stackNameFromDir(dir string) string {
 	return path.Base(dir) + time.Now().Format("-20060102-150405")
 }
 
