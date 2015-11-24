@@ -1,0 +1,20 @@
+
+Parameters:
+  Vpc:
+    Type: AWS::EC2::VPC
+
+  Subnet0:
+    Type: AWS::EC2::Subnet::Id
+
+  Subnet1:
+    Type: AWS::EC2::Subnet::Id
+
+  Subnet2:
+    Type: AWS::EC2::Subnet::Id
+
+Outputs:
+  Vpc:
+    Value: $(Vpc)
+  Subnets:
+    Value:
+      !Join [ ",", [ $(Subnet0), $(Subnet1), $(Subnet2) ] ]

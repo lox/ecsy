@@ -1,0 +1,80 @@
+
+## Create an Amazon Virtual Private Network
+
+Outputs:
+  Vpc:
+    Value: $(Vpc)
+  Subnets:
+    Value:
+      !Join [ ",", [ $(Subnet0), $(Subnet1), $(Subnet2) ] ]
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: $(AWS::StackName)
+
+  Gateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: {}
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: $(Gateway)
+      VpcId: $(Vpc)
+
+  Subnet0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '$(AWS::Region)' ]
+      CidrBlock: 10.0.1.0/24
+      VpcId: $(Vpc)
+
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '$(AWS::Region)' ]
+      CidrBlock: 10.0.2.0/24
+      VpcId: $(Vpc)
+
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 2, !GetAZs '$(AWS::Region)' ]
+      CidrBlock: 10.0.3.0/24
+      VpcId: $(Vpc)
+
+  Routes:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: $(Vpc)
+
+  RouteDefault:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: $(Gateway)
+      RouteTableId: $(Routes)
+
+  Subnet0Routes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: $(Subnet0)
+      RouteTableId: $(Routes)
+
+  Subnet1Routes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: $(Subnet1)
+      RouteTableId: $(Routes)
+
+  Subnet2Routes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: $(Subnet2)
+      RouteTableId: $(Routes)
