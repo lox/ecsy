@@ -24,8 +24,17 @@ func (t Templates) read(path string) ([]byte, error) {
 	return tplB, err
 }
 
-func (t Templates) EcsCluster() Template {
-	b, err := t.read("/templates/build/ecs-cluster.json")
+func (t Templates) EcsStack() Template {
+	b, err := t.read("/templates/build/ecs-stack.json")
+	if err != nil {
+		panic(err)
+	}
+
+	return Template(string(b))
+}
+
+func (t Templates) EcsService() Template {
+	b, err := t.read("/templates/build/ecs-service.json")
 	if err != nil {
 		panic(err)
 	}

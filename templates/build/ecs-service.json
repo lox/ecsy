@@ -1,7 +1,19 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Creates an Amazon Elastic Container Service cluster\n",
   "Parameters": {
+    "TaskDefinition": {
+      "Type": "String",
+      "Description": "The identifier of the ECS TaskDefinition to use"
+    },
+    "ContainerPort": {
+      "Type": "Number",
+      "Description": "The port on the container and load balancer to open",
+      "Default": 80
+    },
+    "ECSSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "A security group for the ELB that has access to the ECS Cluster Instances"
+    },
     "KeyName": {
       "Description": "The ssh keypair used to access the ecs instances",
       "Type": "AWS::EC2::KeyPair::KeyName"
@@ -61,23 +73,33 @@
       "NoEcho": "true",
       "Default": ""
     },
-    "Vpc": {
-      "Type": "AWS::EC2::VPC"
-    },
-    "Subnet0": {
-      "Type": "AWS::EC2::Subnet::Id"
-    },
-    "Subnet1": {
-      "Type": "AWS::EC2::Subnet::Id"
-    },
-    "Subnet2": {
-      "Type": "AWS::EC2::Subnet::Id"
+    "ECSCluster": {
+      "Type": "String",
+      "Description": "The name of the ECS cluster"
     }
   },
   "Outputs": {
-    "ECSCluster": {
+    "ECSLoadBalancer": {
       "Value": {
-        "Ref": "ECSCluster"
+        "Ref": "ECSLoadBalancer"
+      }
+    },
+    "AppURL": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          "http://",
+          [
+            {
+              "Ref": "ECSLoadBalancer"
+            },
+            "DNSName"
+          ],
+          ":",
+          {
+            "Ref": "ContainerPort"
+          }
+        ]
       }
     },
     "SecurityGroup": {
@@ -109,26 +131,144 @@
       }
     }
   },
-  "Mappings": {
-    "AWSRegionToAMI": {
-      "us-east-1": {
-        "AMIID": "ami-ddc7b6b7"
-      },
-      "us-west-2": {
-        "AMIID": "ami-a39df1c3"
-      },
-      "eu-west-1": {
-        "AMIID": "ami-f1b46b82"
-      },
-      "ap-northeast-1": {
-        "AMIID": "ami-3077525e"
-      },
-      "ap-southeast-2": {
-        "AMIID": "ami-23b4eb40"
-      }
-    }
-  },
   "Resources": {
+    "ELBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for ELB in front of ECS",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": {
+              "Ref": "ContainerPort"
+            },
+            "ToPort": {
+              "Ref": "ContainerPort"
+            },
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "ECSLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": {
+          "Ref": "Subnets"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "ELBSecurityGroup"
+          },
+          {
+            "Ref": "ECSSecurityGroup"
+          }
+        ],
+        "Listeners": [
+          {
+            "LoadBalancerPort": {
+              "Ref": "ContainerPort"
+            },
+            "InstancePort": {
+              "Ref": "ContainerPort"
+            },
+            "Protocol": "HTTP"
+          }
+        ],
+        "HealthCheck": {
+          "Target": {
+            "Fn::Join": [
+              "",
+              [
+                "HTTP:",
+                {
+                  "Ref": "ContainerPort"
+                },
+                "/"
+              ]
+            ]
+          },
+          "HealthyThreshold": 2,
+          "UnhealthyThreshold": 10,
+          "Interval": 30,
+          "Timeout": 5
+        },
+        "ConnectionDrainingPolicy": {
+          "Enabled": "true",
+          "Timeout": 60
+        }
+      }
+    },
+    "ECSService": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "ECSCluster"
+        },
+        "DesiredCount": 1,
+        "LoadBalancers": [
+          {
+            "ContainerName": {
+              "Ref": "ContainerName"
+            },
+            "ContainerPort": 80,
+            "LoadBalancerName": {
+              "Ref": "ECSLoadBalancer"
+            }
+          }
+        ],
+        "Role": {
+          "Ref": "ECSServiceRole"
+        },
+        "TaskDefinition": {
+          "Ref": "TaskDefinition"
+        }
+      }
+    },
+    "ECSServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ecs.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "ecs-service",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticloadbalancing:Describe*",
+                    "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                    "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+                    "ec2:Describe*",
+                    "ec2:AuthorizeSecurityGroupIngress"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
     "EC2InstanceProfile": {
       "Type": "AWS::IAM::InstanceProfile",
       "Properties": {
@@ -185,9 +325,6 @@
           }
         ]
       }
-    },
-    "ECSCluster": {
-      "Type": "AWS::ECS::Cluster"
     },
     "ECSAutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
@@ -374,6 +511,166 @@
         "SourceSecurityGroupId": {
           "Ref": "SecurityGroup"
         }
+      }
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ]
+      }
+    },
+    "Gateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+      }
+    },
+    "GatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "Gateway"
+        },
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Subnet0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Subnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
+        },
+        "CidrBlock": "10.0.2.0/24",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Subnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            2,
+            {
+              "Fn::GetAZs": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
+        },
+        "CidrBlock": "10.0.3.0/24",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Routes": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "RouteDefault": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "Gateway"
+        },
+        "RouteTableId": {
+          "Ref": "Routes"
+        }
+      }
+    },
+    "Subnet0Routes": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet0"
+        },
+        "RouteTableId": {
+          "Ref": "Routes"
+        }
+      }
+    },
+    "Subnet1Routes": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet1"
+        },
+        "RouteTableId": {
+          "Ref": "Routes"
+        }
+      }
+    },
+    "Subnet2Routes": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet2"
+        },
+        "RouteTableId": {
+          "Ref": "Routes"
+        }
+      }
+    }
+  },
+  "Mappings": {
+    "AWSRegionToAMI": {
+      "us-east-1": {
+        "AMIID": "ami-ddc7b6b7"
+      },
+      "us-west-2": {
+        "AMIID": "ami-a39df1c3"
+      },
+      "eu-west-1": {
+        "AMIID": "ami-f1b46b82"
+      },
+      "ap-northeast-1": {
+        "AMIID": "ami-3077525e"
+      },
+      "ap-southeast-2": {
+        "AMIID": "ami-23b4eb40"
       }
     }
   }

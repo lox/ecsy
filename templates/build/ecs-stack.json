@@ -1,6 +1,5 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Creates an Amazon Elastic Container Service cluster\n",
   "Parameters": {
     "KeyName": {
       "Description": "The ssh keypair used to access the ecs instances",
@@ -60,14 +59,13 @@
       "Description": "Your password on the Docker Hub",
       "NoEcho": "true",
       "Default": ""
+    },
+    "ECSCluster": {
+      "Type": "String",
+      "Description": "The name of the ECS cluster"
     }
   },
   "Outputs": {
-    "ECSCluster": {
-      "Value": {
-        "Ref": "ECSCluster"
-      }
-    },
     "SecurityGroup": {
       "Value": {
         "Ref": "SecurityGroup"
@@ -173,9 +171,6 @@
           }
         ]
       }
-    },
-    "ECSCluster": {
-      "Type": "AWS::ECS::Cluster"
     },
     "ECSAutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",

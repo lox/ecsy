@@ -6,27 +6,16 @@ A golang binary wrapper around ECS + CloudFormation. Creates a `ecs.json` file i
 ## Usage
 
 ```bash
-# create VPC, ECS Cluster, EC2 AutoScale group
-ecs-former up --keyname lox
+ecs-former create-cluster --name wordpress-ecs
+ecs-former deploy --cluster wordpress-ecs --taskfile examples/wordpress.task.json latest
 ```
 
 ## Plans
-
-### `ecs-former config`
-
-Manipulate the `ecs.json` file, or populate it from a given stack
 
 ### `ecs-former scale <number> <instance type>`
 
 Scale out the underlying instance pool
 
-### `ecs-former deploy`
-
-Deploy the current revision of the with a blue-green strategy.
-
 ### `ecs-former exec`
 
 Executes a command in a single container synchronously.
-
-
-

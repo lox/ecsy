@@ -4,7 +4,6 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"os"
 
 	"github.com/99designs/ecs-former/cmds"
 	"github.com/99designs/ecs-former/core"
@@ -17,12 +16,12 @@ var (
 
 func main() {
 	var (
-		debug     = kingpin.Flag("debug", "Show debugging output").Bool()
-		up        = kingpin.Command("up", "Bring your ecs cluster to a running state")
-		upStack   = up.Flag("stack", "An existing cloudformation stack to use").String()
-		upKeyName = up.Flag("keyname", "The ec2 keypair to use").Default("default").String()
-		poll      = kingpin.Command("poll", "Poll a cloudformation stack")
-		pollStack = poll.Arg("stack", "The name of the stack to poll").Required().String()
+		debug         = kingpin.Flag("debug", "Show debugging output").Bool()
+		create        = kingpin.Command("create-cluster", "Create an ECS cluster")
+		createName    = create.Flag("name", "The name of the ECS stack to create").String()
+		createKeyName = create.Flag("keyname", "The EC2 keypair to use for instance").Default("default").String()
+		poll          = kingpin.Command("poll", "Poll a CloudFormation stack")
+		pollStack     = poll.Arg("stack", "The name of the stack to poll").Required().String()
 	)
 
 	kingpin.Version(Version)
@@ -39,19 +38,13 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		ui.Fatal(err)
-	}
-
 	switch cmd {
-	case up.FullCommand():
-		cmds.UpCommand(ui, cmds.UpCommandInput{
-			StackName: *upStack,
+	case create.FullCommand():
+		cmds.CreateClusterCommand(ui, cmds.CreateClusterCommandInput{
+			Name:      *createName,
 			Templates: core.Templates{core.FS(false)},
-			Dir:       cwd,
-			Cluster: cmds.EcsClusterParameters{
-				KeyName: *upKeyName,
+			Parameters: cmds.EcsClusterParameters{
+				KeyName: *createKeyName,
 			},
 		})
 	case poll.FullCommand():

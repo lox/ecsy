@@ -1,70 +1,25 @@
 
-Description: |
-  Creates an ECS Service and Load Balancer in a given ECS Cluster
-
 Parameters:
-  DockerImage:
+  TaskDefinition:
     Type: String
-    Description: The image to run in the container
-
-  ContainerName:
-    Type: String
-    Description: The name of the docker container
-    Default: app
-
-  ContainerCpu:
-    Type: Number
-    Description: The number of cpu units dedicated to the container (1024 = 1 core)
-    Default: 1024
-
-  ContainerMemory:
-    Type: Number
-    Description: The maxmium amount of memory the container can allocate
-    Default: 200
+    Description: The identifier of the ECS TaskDefinition to use
 
   ContainerPort:
     Type: Number
     Description: The port on the container and load balancer to open
     Default: 80
 
-  ECSCluster:
-    Type: String
-    Description: The name of the ECSCluster to launch the application in
-
-  Vpc:
-    Type: AWS::EC2::VPC::Id
-    Description: The VPC that the load-balancer is running in
-
-  Subnets:
-    Type: List<AWS::EC2::Subnet::Id>
-    Description: The subnets that for the load-balancer to run in (subnets of the above VPC)
-
-  SecurityGroup:
+  ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup::Id
     Description: A security group for the ELB that has access to the ECS Cluster Instances
 
 Outputs:
-  ECSCluster:
-    Value: $(ECSCluster)
   ECSLoadBalancer:
     Value: $(ECSLoadBalancer)
   AppURL:
     Value: !Join ["", "http://", !GetAttr [ $(ECSLoadBalancer), "DNSName" ], ":",  $(ContainerPort)]
 
 Resources:
-  TaskDefinition:
-    Type: AWS::ECS::TaskDefinition
-    Properties:
-      ContainerDefinitions:
-        - Name: $(ContainerName)
-          Cpu: $(ContainerCpu)
-          Essential: true
-          Image: $(DockerImage)
-          Memory: $(ContainerMemory)
-          PortMappings:
-            - HostPort: $(ContainerPort)
-              ContainerPort: $(ContainerPort)
-
   ELBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -80,7 +35,7 @@ Resources:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       Subnets: $(Subnets)
-      SecurityGroups: [ $(ELBSecurityGroup), $(SecurityGroup) ]
+      SecurityGroups: [ $(ELBSecurityGroup), $(ECSSecurityGroup) ]
       Listeners:
         - LoadBalancerPort: $(ContainerPort)
           InstancePort: $(ContainerPort)
