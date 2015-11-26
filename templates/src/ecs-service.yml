@@ -1,8 +1,20 @@
 
 Parameters:
+  TaskFamily:
+    Type: String
+    Description: The family name of the task in use
+
   TaskDefinition:
     Type: String
     Description: The identifier of the ECS TaskDefinition to use
+
+  ECSCluster:
+    Type: String
+    Description: The identifier of the ECS Cluster to use
+
+  ContainerName:
+    Type: String
+    Description: The container to attach to the service
 
   ContainerPort:
     Type: Number
@@ -13,11 +25,26 @@ Parameters:
     Type: AWS::EC2::SecurityGroup::Id
     Description: A security group for the ELB that has access to the ECS Cluster Instances
 
+  Vpc:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC for the Security Group
+
+  Subnets:
+    Type: CommaDelimitedList
+    Description: Subnets to create the ELB in
+
 Outputs:
+  StackType:
+    Value: "ecs-former::ecs-service"
+
   ECSLoadBalancer:
-    Value: $(ECSLoadBalancer)
-  AppURL:
-    Value: !Join ["", "http://", !GetAttr [ $(ECSLoadBalancer), "DNSName" ], ":",  $(ContainerPort)]
+    Value: http://$(ECSLoadBalancer[DNSName]):$(ContainerPort)
+
+  ECSCluster:
+    Value: $(ECSCluster)
+
+  TaskFamily:
+    Value: $(TaskFamily)
 
 Resources:
   ELBSecurityGroup:

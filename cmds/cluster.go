@@ -18,7 +18,6 @@ type EcsClusterParameters struct {
 
 type CreateClusterCommandInput struct {
 	Name       string
-	StackName  string
 	Templates  core.Templates
 	Parameters EcsClusterParameters
 }
@@ -39,18 +38,16 @@ func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 		ClusterName: aws.String(input.Name),
 	})
 
-	if input.StackName == "" {
-		input.StackName = input.Name + "-ecs-" + time.Now().Format("20060102-150405")
-	}
+	stackName := input.Name + "-ecs-" + time.Now().Format("20060102-150405")
 
-	ui.Printf("Creating cloudformation stack %s", input.StackName)
+	ui.Printf("Creating cloudformation stack %s", stackName)
 	svc := cloudformation.New(session.New())
 	_, err = svc.CreateStack(&cloudformation.CreateStackInput{
-		StackName: aws.String(input.StackName),
+		StackName: aws.String(stackName),
 		Capabilities: []*string{
 			aws.String("CAPABILITY_IAM"),
 		},
-		DisableRollback: aws.Bool(true),
+		DisableRollback: aws.Bool(false),
 		Parameters: []*cloudformation.Parameter{{
 			ParameterKey:   aws.String("KeyName"),
 			ParameterValue: aws.String(input.Parameters.KeyName),
@@ -64,7 +61,7 @@ func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 		ui.Fatal(err)
 	}
 
-	events, errs := pollStack(svc, input.StackName)
+	events, errs := pollStack(svc, stackName)
 	for event := range events {
 		ui.Println(eventString(event))
 	}
@@ -72,4 +69,43 @@ func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 	if err := <-errs; err != nil {
 		ui.Fatal(err)
 	}
+}
+
+type UpdateClusterCommandInput struct {
+	Name       string
+	Templates  core.Templates
+	Parameters EcsClusterParameters
+}
+
+func UpdateClusterCommand(ui *Ui, input UpdateClusterCommandInput) {
+
+	// ui.Printf("Updating cloudformation stack %s", input.StackName)
+	// svc := cloudformation.New(session.New())
+	// _, err = svc.CreateStack(&cloudformation.CreateStackInput{
+	// 	StackName: aws.String(input.StackName),
+	// 	Capabilities: []*string{
+	// 		aws.String("CAPABILITY_IAM"),
+	// 	},
+	// 	DisableRollback: aws.Bool(true),
+	// 	Parameters: []*cloudformation.Parameter{{
+	// 		ParameterKey:   aws.String("KeyName"),
+	// 		ParameterValue: aws.String(input.Parameters.KeyName),
+	// 	}, {
+	// 		ParameterKey:   aws.String("ECSCluster"),
+	// 		ParameterValue: aws.String(input.Name),
+	// 	}},
+	// 	TemplateBody: aws.String(string(input.Templates.EcsStack())),
+	// })
+	// if err != nil {
+	// 	ui.Fatal(err)
+	// }
+
+	// events, errs := pollStack(svc, input.StackName)
+	// for event := range events {
+	// 	ui.Println(eventString(event))
+	// }
+
+	// if err := <-errs; err != nil {
+	// 	ui.Fatal(err)
+	// }
 }

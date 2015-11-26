@@ -12,6 +12,6 @@ build/vpc.json: src/vpc.yml
 	@mkdir -p build/
 	cfoo $^ > $@
 
-build/ecs-service.json: src/ecs-service.yml src/ecs-stack.yml src/vpc.yml
+build/ecs-service.json: src/ecs-service.yml
 	@mkdir -p build/
 	cfoo $^ > $@

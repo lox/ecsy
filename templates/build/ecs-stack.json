@@ -66,6 +66,14 @@
     }
   },
   "Outputs": {
+    "StackType": {
+      "Value": "ecs-former::ecs-stack"
+    },
+    "ECSCluster": {
+      "Value": {
+        "Ref": "ECSCluster"
+      }
+    },
     "SecurityGroup": {
       "Value": {
         "Ref": "SecurityGroup"

@@ -1,8 +1,6 @@
 ECS Former
 ==========
 
-A golang binary wrapper around ECS + CloudFormation. Creates a `ecs.json` file in the project directory to track context of what stack and app to target.
-
 ## Usage
 
 ```bash

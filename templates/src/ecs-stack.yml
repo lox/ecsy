@@ -66,6 +66,12 @@ Parameters:
     Description: The name of the ECS cluster
 
 Outputs:
+  StackType:
+    Value: "ecs-former::ecs-stack"
+
+  ECSCluster:
+    Value: $(ECSCluster)
+
   SecurityGroup:
     Value: $(SecurityGroup)
 

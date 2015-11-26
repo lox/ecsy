@@ -4,6 +4,7 @@
 Outputs:
   Vpc:
     Value: $(Vpc)
+
   Subnets:
     Value:
       !Join [ ",", [ $(Subnet0), $(Subnet1), $(Subnet2) ] ]

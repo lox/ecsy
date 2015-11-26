@@ -110,15 +110,10 @@ func (s *stackPoller) Push(events ...*cfn.StackEvent) {
 		s.ch <- ev
 		if *ev.LogicalResourceId == s.stackName {
 			switch *ev.ResourceStatus {
-			case cfn.ResourceStatusCreateInProgress:
 			case cfn.ResourceStatusUpdateFailed:
 				fallthrough
 			case cfn.ResourceStatusCreateFailed:
 				s.err = errors.New(*ev.ResourceStatusReason)
-				fallthrough
-			default:
-				s.done = true
-				return
 			}
 		}
 	}

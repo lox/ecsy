@@ -1,0 +1,15 @@
+wordpress:
+  image: gravityrail/wordpress
+  volumes:
+    - src:/var/www/html
+  links:
+    - db:mysql
+  ports:
+    - 80:80
+  mem_limit: 200
+
+db:
+  image: mariadb
+  environment:
+    MYSQL_ROOT_PASSWORD: example
+  mem_limit: 512
