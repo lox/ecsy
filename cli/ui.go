@@ -1,10 +1,18 @@
-package cmds
+package cli
 
 import (
 	"io"
 	"log"
 	"os"
 )
+
+var DefaultUi *Ui
+
+func init() {
+	DefaultUi = NewUi()
+	log.SetFlags(0)
+	log.SetOutput(DefaultUi.DebugWriter())
+}
 
 type Ui struct {
 	*log.Logger
@@ -18,8 +26,8 @@ func (ui *Ui) DebugWriter() io.Writer {
 
 func NewUi() *Ui {
 	return &Ui{
-		Logger: log.New(os.Stdout, "", 0),
-		Error:  log.New(os.Stderr, "", 0),
+		Logger: log.New(os.Stdout, "INFO ", log.LstdFlags),
+		Error:  log.New(os.Stderr, "ERROR ", log.LstdFlags),
 		Debug:  log.New(os.Stderr, "DEBUG ", log.LstdFlags),
 		Exit:   os.Exit,
 	}

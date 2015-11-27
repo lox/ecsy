@@ -19,7 +19,12 @@
     },
     "ContainerPort": {
       "Type": "Number",
-      "Description": "The port on the container and load balancer to open",
+      "Description": "The port on the container to open",
+      "Default": 80
+    },
+    "ELBPort": {
+      "Type": "Number",
+      "Description": "The port on the load balancer to open",
       "Default": 80
     },
     "ECSSecurityGroup": {
@@ -53,7 +58,7 @@
             },
             ":",
             {
-              "Ref": "ContainerPort"
+              "Ref": "ELBPort"
             }
           ]
         ]
@@ -82,10 +87,10 @@
           {
             "IpProtocol": "tcp",
             "FromPort": {
-              "Ref": "ContainerPort"
+              "Ref": "ELBPort"
             },
             "ToPort": {
-              "Ref": "ContainerPort"
+              "Ref": "ELBPort"
             },
             "CidrIp": "0.0.0.0/0"
           }
@@ -109,7 +114,7 @@
         "Listeners": [
           {
             "LoadBalancerPort": {
-              "Ref": "ContainerPort"
+              "Ref": "ELBPort"
             },
             "InstancePort": {
               "Ref": "ContainerPort"
@@ -153,7 +158,9 @@
             "ContainerName": {
               "Ref": "ContainerName"
             },
-            "ContainerPort": 80,
+            "ContainerPort": {
+              "Ref": "ContainerPort"
+            },
             "LoadBalancerName": {
               "Ref": "ECSLoadBalancer"
             }

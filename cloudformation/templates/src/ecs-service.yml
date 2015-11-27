@@ -18,7 +18,12 @@ Parameters:
 
   ContainerPort:
     Type: Number
-    Description: The port on the container and load balancer to open
+    Description: The port on the container to open
+    Default: 80
+
+  ELBPort:
+    Type: Number
+    Description: The port on the load balancer to open
     Default: 80
 
   ECSSecurityGroup:
@@ -38,7 +43,7 @@ Outputs:
     Value: "ecs-former::ecs-service"
 
   ECSLoadBalancer:
-    Value: http://$(ECSLoadBalancer[DNSName]):$(ContainerPort)
+    Value: http://$(ECSLoadBalancer[DNSName]):$(ELBPort)
 
   ECSCluster:
     Value: $(ECSCluster)
@@ -54,8 +59,8 @@ Resources:
        VpcId : $(Vpc)
        SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: $(ContainerPort)
-          ToPort: $(ContainerPort)
+          FromPort: $(ELBPort)
+          ToPort: $(ELBPort)
           CidrIp: 0.0.0.0/0
 
   ECSLoadBalancer:
@@ -64,7 +69,7 @@ Resources:
       Subnets: $(Subnets)
       SecurityGroups: [ $(ELBSecurityGroup), $(ECSSecurityGroup) ]
       Listeners:
-        - LoadBalancerPort: $(ContainerPort)
+        - LoadBalancerPort: $(ELBPort)
           InstancePort: $(ContainerPort)
           Protocol: HTTP
       HealthCheck:
@@ -84,7 +89,7 @@ Resources:
       DesiredCount: 1
       LoadBalancers:
         - ContainerName: $(ContainerName)
-          ContainerPort: 80
+          ContainerPort: $(ContainerPort)
           LoadBalancerName: $(ECSLoadBalancer)
       Role: $(ECSServiceRole)
       TaskDefinition: $(TaskDefinition)
