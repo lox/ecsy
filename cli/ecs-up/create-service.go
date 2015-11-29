@@ -46,6 +46,11 @@ func CreateServiceCommand(ui *cli.Ui, input CreateServiceCommandInput) {
 	log.Printf("Found cloudformation stack %s for ECS cluster", stack.StackName)
 
 	outputs := stack.OutputMap()
+
+	if err = outputs.RequireKeys("Subnets", "Vpc", "SecurityGroup"); err != nil {
+		ui.Fatal(err)
+	}
+
 	params := cloudformation.StackParameters{
 		"ECSCluster":       input.ClusterName,
 		"TaskFamily":       taskDef.Family,
@@ -89,6 +94,14 @@ func CreateServiceCommand(ui *cli.Ui, input CreateServiceCommandInput) {
 
 	log.Printf("%#v", serviceOutputs)
 	log.Printf("Service %s created in %s", input.ClusterName, time.Now().Sub(timer).String())
+
+	log.Printf("Waiting for service to stabilize")
+	if err = ecsClient.WaitUntilServicesStable(input.ClusterName, serviceOutputs["ECSService"]); err != nil {
+		ui.Fatal(err)
+	}
+
+	ui.Println("Service available at", serviceOutputs["ECSLoadBalancer"])
+
 }
 
 func isServiceCreated(project string, cluster string) (bool, error) {

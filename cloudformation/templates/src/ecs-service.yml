@@ -48,6 +48,9 @@ Outputs:
   ECSCluster:
     Value: $(ECSCluster)
 
+  ECSService:
+    Value: $(ECSService)
+
   TaskFamily:
     Value: $(TaskFamily)
 

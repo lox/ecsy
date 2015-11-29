@@ -69,6 +69,11 @@
         "Ref": "ECSCluster"
       }
     },
+    "ECSService": {
+      "Value": {
+        "Ref": "ECSService"
+      }
+    },
     "TaskFamily": {
       "Value": {
         "Ref": "TaskFamily"

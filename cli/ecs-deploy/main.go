@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
@@ -19,20 +20,13 @@ var (
 	Version   string
 )
 
-func defaultProjectName() string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Base(cwd)
-}
-
 func main() {
 	var (
 		debug       = kingpin.Flag("debug", "Show debugging output").Bool()
-		projectName = kingpin.Flag("project-name", "The name of the project").Short('p').Default(defaultProjectName()).String()
+		projectName = kingpin.Flag("project-name", "The name of the project").Short('p').Default(currentDirName()).String()
 		composeFile = kingpin.Flag("file", "The docker-compose file to use").Short('f').Default("docker-compose.yml").String()
 		cluster     = kingpin.Flag("cluster", "The ECS cluster to use").Short('c').Default("default").String()
+		imageTags   = kingpin.Arg("imagetags", "Tags in the form image=tag to apply to the task").String()
 	)
 
 	kingpin.Version(Version)
@@ -43,7 +37,7 @@ func main() {
 	kingpin.Parse()
 	ui := cli.DefaultUi
 
-	if *debug {
+	if *debug == false {
 		log.SetOutput(ioutil.Discard)
 	}
 
@@ -70,23 +64,60 @@ func main() {
 		ecsClient = ecs.NewClient()
 	}
 
-	ui.Println("Registering task definition with ECS")
-	taskDef, err := ecsClient.RegisterComposerTaskDefinition(*composeFile, *projectName)
-	if err != nil {
-		ui.Fatal(err)
-	}
-
-	log.Printf("Registered task definition %s:%d (%s)", taskDef.Family, taskDef.Revision, taskDef.Arn)
-
 	// look for the service stack
+	log.Printf("Looking for service stack")
 	serviceStack, err := cfnClient.FindStackByOutputs(map[string]string{
 		"StackType":  "ecs-former::ecs-service",
 		"ECSCluster": *cluster,
-		"TaskFamily": taskDef.Family,
+		"TaskFamily": *projectName,
 	})
 	if err != nil {
 		ui.Fatal(err)
 	}
 
-	log.Printf("%#v", serviceStack)
+	imageMap, err := parseImageMap(*imageTags)
+	if err != nil {
+		ui.Fatal(err)
+	}
+
+	ui.Println("Updating task definition with ECS")
+	taskDef, err := ecsClient.UpdateComposerTaskDefinition(*composeFile, *projectName, imageMap)
+	if err != nil {
+		ui.Fatal(err)
+	}
+
+	serviceOutputs := serviceStack.OutputMap()
+
+	err = ecsClient.UpdateService(serviceOutputs["ECSCluster"], serviceOutputs["ECSService"], taskDef.Arn)
+	if err != nil {
+		ui.Fatal(err)
+	}
+
+	ui.Printf("Waiting for service to stabilize")
+	if err = ecsClient.WaitUntilServicesStable(*cluster, serviceOutputs["ECSService"]); err != nil {
+		ui.Fatal(err)
+	}
+
+	ui.Println("Service available at", serviceOutputs["ECSLoadBalancer"])
+}
+
+func parseImageMap(s string) (ecs.ContainerImageMap, error) {
+	m := ecs.ContainerImageMap{}
+
+	for _, token := range strings.Split(s, ",") {
+		pieces := strings.SplitN(token, "=", 2)
+		m[pieces[0]] = pieces[1]
+	}
+
+	log.Printf("Parsed %s to %#v", s, m)
+	return m, nil
+
+}
+
+func currentDirName() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Base(cwd)
 }

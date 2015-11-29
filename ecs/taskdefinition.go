@@ -1,6 +1,13 @@
 package ecs
 
-import "log"
+import (
+	"fmt"
+	"log"
+	"strings"
+
+	"github.com/aws/aws-sdk-go/aws"
+	amazonecs "github.com/aws/aws-sdk-go/service/ecs"
+)
 
 type PortMapping struct {
 	ContainerName           string
@@ -22,7 +29,46 @@ func (c *Client) RegisterComposerTaskDefinition(file string, projectName string)
 
 	log.Printf("Task Definition: %#v", input)
 
-	resp, err := c.RegisterTaskDefinition(input)
+	return c.registerTaskDefinition(input)
+
+}
+
+type ContainerImageMap map[string]string
+
+func (m ContainerImageMap) apply(defs []*amazonecs.ContainerDefinition) error {
+	for name, tag := range m {
+		var matched bool
+		for idx, containerDef := range defs {
+			if *containerDef.Name == name {
+				matched = true
+				imageParts := strings.Split(*containerDef.Image, ":")
+				defs[idx].Image = aws.String(imageParts[0] + ":" + tag)
+			}
+		}
+		if !matched {
+			return fmt.Errorf("Failed to find a container named %s", name)
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) UpdateComposerTaskDefinition(file string, projectName string, images ContainerImageMap) (*TaskDefinition, error) {
+	input, err := TransformComposeFile(file, projectName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = images.apply(input.ContainerDefinitions); err != nil {
+		return nil, err
+	}
+
+	log.Printf("Task Definition: %#v", input)
+	return c.registerTaskDefinition(input)
+}
+
+func (c *Client) registerTaskDefinition(input *amazonecs.RegisterTaskDefinitionInput) (*TaskDefinition, error) {
+	resp, err := c.client.RegisterTaskDefinition(input)
 	if err != nil {
 		return nil, err
 	}
