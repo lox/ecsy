@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,14 +11,14 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/99designs/ecs-cli/cli"
-	"github.com/99designs/ecs-cli/cloudformation"
-	"github.com/99designs/ecs-cli/ecs"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
 var (
-	cfnClient *cloudformation.Client
-	ecsClient *ecs.Client
-	Version   string
+	Version string
+	cfnSvc  *cloudformation.CloudFormation
+	ecsSvc  *ecs.ECS
 )
 
 func main() {
@@ -41,71 +42,39 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 
-	if cfnClient == nil {
-		cfnClient = cloudformation.NewClient()
-	}
-
-	clusterStack, err := cfnClient.FindStackByOutputs(map[string]string{
-		"StackType":  "ecs-former::ecs-stack",
-		"ECSCluster": *cluster,
-	})
-	if err != nil {
-		ui.Fatal(err)
-	}
-
-	log.Printf("Found cluster stack %s", *cluster)
-	outputs := clusterStack.OutputMap()
-
-	if err = outputs.RequireKeys("Subnets", "Vpc", "SecurityGroup"); err != nil {
-		ui.Fatal(err)
-	}
-
-	if ecsClient == nil {
-		ecsClient = ecs.NewClient()
-	}
-
-	// look for the service stack
-	log.Printf("Looking for service stack")
-	serviceStack, err := cfnClient.FindStackByOutputs(map[string]string{
-		"StackType":  "ecs-former::ecs-service",
-		"ECSCluster": *cluster,
-		"TaskFamily": *projectName,
-	})
-	if err != nil {
-		ui.Fatal(err)
-	}
-
 	imageMap, err := parseImageMap(*imageTags)
 	if err != nil {
 		ui.Fatal(err)
 	}
 
-	ui.Println("Updating task definition with ECS")
-	taskDef, err := ecsClient.UpdateComposerTaskDefinition(*composeFile, *projectName, imageMap)
-	if err != nil {
-		ui.Fatal(err)
+	if _, err := os.Stat(*composeFile); os.IsNotExist(err) {
+		ui.Fatalf("Unable to open compose file %s", *composeFile)
 	}
 
-	serviceOutputs := serviceStack.OutputMap()
+	session := session.New(nil)
+	cfnSvc = cloudformation.New(session)
+	ecsSvc = ecs.New(session)
 
-	err = ecsClient.UpdateService(serviceOutputs["ECSCluster"], serviceOutputs["ECSService"], taskDef.Arn)
-	if err != nil {
-		ui.Fatal(err)
-	}
-
-	ui.Printf("Waiting for service to stabilize")
-	if err = ecsClient.WaitUntilServicesStable(*cluster, serviceOutputs["ECSService"]); err != nil {
-		ui.Fatal(err)
-	}
-
-	ui.Println("Service available at", serviceOutputs["ECSLoadBalancer"])
+	DeployCommand(ui, DeployCommandInput{
+		ClusterName:     *cluster,
+		ProjectName:     *projectName,
+		ComposeFile:     *composeFile,
+		ContainerImages: imageMap,
+	})
 }
 
 func parseImageMap(s string) (ecs.ContainerImageMap, error) {
 	m := ecs.ContainerImageMap{}
 
+	if s == "" {
+		return m, nil
+	}
+
 	for _, token := range strings.Split(s, ",") {
 		pieces := strings.SplitN(token, "=", 2)
+		if len(pieces) != 2 {
+			return nil, fmt.Errorf("Failed to parse image tag %q", s)
+		}
 		m[pieces[0]] = pieces[1]
 	}
 

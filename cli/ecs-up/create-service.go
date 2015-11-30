@@ -5,67 +5,71 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/99designs/ecs-cli"
 	"github.com/99designs/ecs-cli/cli"
-	"github.com/99designs/ecs-cli/cloudformation"
-	"github.com/99designs/ecs-cli/cloudformation/templates"
+	"github.com/99designs/ecs-cli/compose"
+	"github.com/99designs/ecs-cli/templates"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/ecs"
 )
 
 type CreateServiceCommandInput struct {
-	ClusterName       string
-	ProjectName       string
-	DockerComposeFile string
+	ClusterName string
+	ProjectName string
+	ComposeFile string
 }
 
 func CreateServiceCommand(ui *cli.Ui, input CreateServiceCommandInput) {
-	exists, err := isServiceCreated(input.ProjectName, input.ClusterName)
-	if err != nil {
-		ui.Fatal(err)
-	} else if exists {
+	stack, _ := ecscli.FindServiceStack(cfnSvc, input.ClusterName, input.ProjectName)
+	if stack != nil {
 		ui.Fatalf("A service already exists for %q in cluster %q. Use `ecs-deploy` or `ecs-up update-service`",
 			input.ProjectName, input.ClusterName)
 	}
 
-	ui.Printf("Registering a task for %s (%s)", input.ProjectName, input.DockerComposeFile)
-
-	taskDef, err := ecsClient.RegisterComposerTaskDefinition(input.DockerComposeFile, input.ProjectName)
+	ui.Printf("Generating task definition from %s", input.ComposeFile)
+	taskDefinitionInput, err := compose.TransformComposeFile(input.ComposeFile, input.ProjectName)
 	if err != nil {
 		ui.Fatal(err)
 	}
 
-	ui.Printf("Created task %s revision %d", taskDef.Family, taskDef.Revision)
+	ui.Printf("Registering a task for %s", input.ProjectName)
+	resp, err := ecsSvc.RegisterTaskDefinition(taskDefinitionInput)
+	if err != nil {
+		ui.Fatal(err)
+	}
+	ui.Printf("Registered task definition %s:%d", *resp.TaskDefinition.Family, *resp.TaskDefinition.Revision)
 
-	// find the ecs stack for parameters
-	stack, err := cfnClient.FindStackByOutputs(cloudformation.OutputMap{
-		"StackType":  "ecs-former::ecs-stack",
-		"ECSCluster": input.ClusterName,
-	})
+	clusterStack, err := ecscli.FindClusterStack(cfnSvc, input.ClusterName)
 	if err != nil {
 		ui.Fatal(err)
 	}
 
-	log.Printf("Found cloudformation stack %s for ECS cluster", stack.StackName)
+	log.Printf("Found cloudformation stack %s for ECS cluster", *clusterStack.StackName)
 
-	outputs := stack.OutputMap()
-
-	if err = outputs.RequireKeys("Subnets", "Vpc", "SecurityGroup"); err != nil {
-		ui.Fatal(err)
-	}
-
-	params := cloudformation.StackParameters{
+	outputs := ecscli.StackOutputMap(clusterStack)
+	params := map[string]string{
 		"ECSCluster":       input.ClusterName,
-		"TaskFamily":       taskDef.Family,
-		"TaskDefinition":   taskDef.Arn,
+		"TaskFamily":       *resp.TaskDefinition.Family,
+		"TaskDefinition":   *resp.TaskDefinition.TaskDefinitionArn,
 		"Subnets":          outputs["Subnets"],
 		"Vpc":              outputs["Vpc"],
 		"ECSSecurityGroup": outputs["SecurityGroup"],
 	}
 
-	if len(taskDef.PortMappings) == 1 {
-		params["ContainerName"] = taskDef.PortMappings[0].ContainerName
-		params["ContainerPort"] = strconv.FormatInt(taskDef.PortMappings[0].ContainerPort, 10)
-		params["ELBPort"] = strconv.FormatInt(taskDef.PortMappings[0].HostPort, 10)
-	} else if len(taskDef.PortMappings) > 1 {
-		ui.Fatalf("Task definition has >1 host mapped ports, not yet supported")
+	exposedPorts := ecscli.ExposedPorts(resp.TaskDefinition)
+
+	if len(exposedPorts) != 1 {
+		ui.Fatalf("Task definition without exactly 1 host mapped port are not yet supported")
+	}
+
+	// for now this is a single value
+	for container, mappings := range exposedPorts {
+		for _, mapping := range mappings {
+			params["ContainerName"] = container
+			params["ContainerPort"] = strconv.FormatInt(*mapping.ContainerPort, 10)
+			params["ELBPort"] = strconv.FormatInt(*mapping.HostPort, 10)
+		}
 	}
 
 	timer := time.Now()
@@ -73,49 +77,36 @@ func CreateServiceCommand(ui *cli.Ui, input CreateServiceCommandInput) {
 
 	ui.Printf("Creating service cloudformation stack %s", stackName)
 
-	err = cfnClient.CreateStack(stackName, templates.EcsService(), params)
+	err = ecscli.CreateStack(cfnSvc, stackName, templates.EcsService(), params)
 	if err != nil {
 		ui.Fatal(err)
 	}
 
-	poller := cfnClient.PollStackEvents(stackName)
-	for event := range poller.Events(time.Time{}) {
-		ui.Printf("%s\n", event.String())
-	}
-
-	if err := poller.Error(); err != nil {
-		ui.Fatal(err)
-	}
-
-	serviceOutputs, err := cfnClient.StackOutputs(stackName)
-	if err != nil {
-		ui.Fatal(err)
-	}
-
-	log.Printf("%#v", serviceOutputs)
-	log.Printf("Service %s created in %s", input.ClusterName, time.Now().Sub(timer).String())
-
-	log.Printf("Waiting for service to stabilize")
-	if err = ecsClient.WaitUntilServicesStable(input.ClusterName, serviceOutputs["ECSService"]); err != nil {
-		ui.Fatal(err)
-	}
-
-	ui.Println("Service available at", serviceOutputs["ECSLoadBalancer"])
-
-}
-
-func isServiceCreated(project string, cluster string) (bool, error) {
-	_, err := cfnClient.FindStackByOutputs(cloudformation.OutputMap{
-		"StackType":  "ecs-former::ecs-service",
-		"ECSCluster": cluster,
-		"TaskFamily": project,
+	err = ecscli.PollStackEvents(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
+		ui.Printf("%s\n", ecscli.FormatStackEvent(event))
 	})
 	if err != nil {
-		if err == cloudformation.ErrNoStacksFound {
-			return false, nil
-		} else {
-			return false, err
-		}
+		ui.Fatal(err)
 	}
-	return true, nil
+
+	stackOutputs, err := ecscli.StackOutputs(cfnSvc, stackName)
+	if err != nil {
+		ui.Fatal(err)
+	}
+
+	serviceResp, err := ecsSvc.DescribeServices(&ecs.DescribeServicesInput{
+		Services: []*string{aws.String(stackOutputs["ECSService"])},
+		Cluster:  aws.String(input.ClusterName),
+	})
+	if err != nil {
+		ui.Fatal(err)
+	}
+
+	ui.Printf("Waiting for service to reach a steady state.")
+	err = ecscli.PollDeployment(ecsSvc, serviceResp.Services[0], outputs["ECSCluster"], func(e *ecs.ServiceEvent) {
+		log.Println(*e.Message)
+	})
+
+	log.Printf("Service created in %s", time.Now().Sub(timer).String())
+	ui.Println("Service available at", stackOutputs["ECSLoadBalancer"])
 }

@@ -1,10 +1,9 @@
 package main
 
 import (
-	"log"
-	"time"
-
+	"github.com/99designs/ecs-cli"
 	"github.com/99designs/ecs-cli/cli"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
 type PollCommandInput struct {
@@ -12,18 +11,14 @@ type PollCommandInput struct {
 }
 
 func PollCommand(ui *cli.Ui, input PollCommandInput) {
-	poller := cfnClient.PollStackEvents(input.StackName)
-
-	log.Printf("Events for %s", input.StackName)
-	for event := range poller.Events(time.Time{}) {
-		ui.Printf("%s\n", event.String())
-	}
-
-	if err := poller.Error(); err != nil {
+	err := ecscli.PollStackEvents(cfnSvc, input.StackName, func(event *cloudformation.StackEvent) {
+		ui.Printf("%s\n", ecscli.FormatStackEvent(event))
+	})
+	if err != nil {
 		ui.Fatal(err)
 	}
 
-	outputs, err := cfnClient.StackOutputs(input.StackName)
+	outputs, err := ecscli.StackOutputs(cfnSvc, input.StackName)
 	if err != nil {
 		ui.Fatal(err)
 	}

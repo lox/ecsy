@@ -10,20 +10,20 @@ install: templates
 	go install -ldflags="$(FLAGS)" github.com/99designs/ecs-cli/cli/ecs-deploy
 	go install -ldflags="$(FLAGS)" github.com/99designs/ecs-cli/cli/ecs-up
 
-templates: cloudformation/templates/build/ecs-service.json cloudformation/templates/build/ecs-stack.json cloudformation/templates/build/vpc.json
-	esc -o cloudformation/templates/static.go -pkg templates cloudformation/templates/build
+templates: templates/build/ecs-service.json templates/build/ecs-stack.json templates/build/vpc.json
+	esc -o templates/static.go -pkg templates templates/build
 
 clean:
-	rm $(wildcard cloudformation/templates/build/*.json)
+	rm $(wildcard templates/build/*.json)
 
-cloudformation/templates/build/ecs-stack.json: cloudformation/templates/src/ecs-stack.yml cloudformation/templates/src/vpc.yml
-	@mkdir -p cloudformation/templates/build/
+templates/build/ecs-stack.json: templates/src/ecs-stack.yml templates/src/vpc.yml
+	@mkdir -p templates/build/
 	cfoo $^ > $@
 
-cloudformation/templates/build/vpc.json: cloudformation/templates/src/vpc.yml
-	@mkdir -p cloudformation/templates/build/
+templates/build/vpc.json: templates/src/vpc.yml
+	@mkdir -p templates/build/
 	cfoo $^ > $@
 
-cloudformation/templates/build/ecs-service.json: cloudformation/templates/src/ecs-service.yml
-	@mkdir -p cloudformation/templates/build/
+templates/build/ecs-service.json: templates/src/ecs-service.yml
+	@mkdir -p templates/build/
 	cfoo $^ > $@

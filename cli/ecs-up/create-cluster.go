@@ -4,10 +4,17 @@ import (
 	"log"
 	"time"
 
+	"github.com/99designs/ecs-cli"
 	"github.com/99designs/ecs-cli/cli"
-	"github.com/99designs/ecs-cli/cloudformation"
-	"github.com/99designs/ecs-cli/cloudformation/templates"
+	"github.com/99designs/ecs-cli/templates"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/ecs"
 )
+
+type EcsClusterParameters struct {
+	KeyName string
+}
 
 type CreateClusterCommandInput struct {
 	ClusterName string
@@ -17,16 +24,15 @@ type CreateClusterCommandInput struct {
 func CreateClusterCommand(ui *cli.Ui, input CreateClusterCommandInput) {
 	ui.Printf("Creating cluster %s", input.ClusterName)
 
-	_, err := ecsClient.CreateCluster(input.ClusterName)
-	if err != nil {
-		ui.Fatal(err)
-	}
+	_, err := ecsSvc.CreateCluster(&ecs.CreateClusterInput{
+		ClusterName: aws.String(input.ClusterName),
+	})
 
 	timer := time.Now()
 	stackName := input.ClusterName + "-ecs-" + time.Now().Format("20060102-150405")
 	ui.Printf("Creating cloudformation stack %s", stackName)
 
-	err = cfnClient.CreateStack(stackName, templates.EcsStack(), cloudformation.StackParameters{
+	err = ecscli.CreateStack(cfnSvc, stackName, templates.EcsStack(), map[string]string{
 		"KeyName":    input.Parameters.KeyName,
 		"ECSCluster": input.ClusterName,
 	})
@@ -34,22 +40,11 @@ func CreateClusterCommand(ui *cli.Ui, input CreateClusterCommandInput) {
 		ui.Fatal(err)
 	}
 
-	poller := cfnClient.PollStackEvents(stackName)
-	for event := range poller.Events(time.Time{}) {
-		ui.Printf("%s\n", event.String())
-	}
-
-	if err := poller.Error(); err != nil {
-		ui.Fatal(err)
-	}
-
-	outputs, err := cfnClient.StackOutputs(stackName)
+	err = ecscli.PollStackEvents(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
+		ui.Printf("%s\n", ecscli.FormatStackEvent(event))
+	})
 	if err != nil {
 		ui.Fatal(err)
-	}
-
-	for k, v := range outputs {
-		log.Printf("Stack Output: %s = %s", k, v)
 	}
 
 	log.Printf("Cluster %s created in %s", input.ClusterName, time.Now().Sub(timer).String())

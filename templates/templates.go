@@ -29,7 +29,7 @@ func readTemplateBytes(path string) ([]byte, error) {
 type Template string
 
 func EcsStack() string {
-	b, err := readTemplateBytes("/cloudformation/templates/build/ecs-stack.json")
+	b, err := readTemplateBytes("/templates/build/ecs-stack.json")
 	if err != nil {
 		panic(err)
 	}
@@ -37,7 +37,7 @@ func EcsStack() string {
 }
 
 func EcsService() string {
-	b, err := readTemplateBytes("/cloudformation/templates/build/ecs-service.json")
+	b, err := readTemplateBytes("/templates/build/ecs-service.json")
 	if err != nil {
 		panic(err)
 	}

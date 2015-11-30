@@ -7,16 +7,17 @@ import (
 	"path/filepath"
 
 	"github.com/99designs/ecs-cli/cli"
-	"github.com/99designs/ecs-cli/cloudformation"
-	"github.com/99designs/ecs-cli/ecs"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/ecs"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	Version   string
-	cfnClient *cloudformation.Client
-	ecsClient *ecs.Client
+	Version string
+	cfnSvc  *cloudformation.CloudFormation
+	ecsSvc  *ecs.ECS
 )
 
 func main() {
@@ -41,13 +42,9 @@ func main() {
 		pollStack = poll.Arg("stack", "The name of the cloudformation stack to poll").String()
 	)
 
-	if cfnClient == nil {
-		cfnClient = cloudformation.NewClient()
-	}
-
-	if ecsClient == nil {
-		ecsClient = ecs.NewClient()
-	}
+	session := session.New(nil)
+	cfnSvc = cloudformation.New(session)
+	ecsSvc = ecs.New(session)
 
 	kingpin.Version(Version)
 	kingpin.CommandLine.Help =
@@ -71,9 +68,9 @@ func main() {
 
 	case createSvc.FullCommand():
 		CreateServiceCommand(ui, CreateServiceCommandInput{
-			ClusterName:       *createSvcCluster,
-			ProjectName:       *createSvcProjectName,
-			DockerComposeFile: *createSvcFile,
+			ClusterName: *createSvcCluster,
+			ProjectName: *createSvcProjectName,
+			ComposeFile: *createSvcFile,
 		})
 
 	case update.FullCommand():

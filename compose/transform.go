@@ -1,4 +1,4 @@
-package ecs
+package compose
 
 import (
 	"errors"
@@ -7,16 +7,16 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	amazonecs "github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/docker/libcompose/docker"
 	"github.com/docker/libcompose/project"
 )
 
-func TransformComposeFile(composeFile string, projectName string) (*amazonecs.RegisterTaskDefinitionInput, error) {
-	task := amazonecs.RegisterTaskDefinitionInput{
+func TransformComposeFile(composeFile string, projectName string) (*ecs.RegisterTaskDefinitionInput, error) {
+	task := ecs.RegisterTaskDefinitionInput{
 		Family:               aws.String(projectName),
-		ContainerDefinitions: []*amazonecs.ContainerDefinition{},
-		Volumes:              []*amazonecs.Volume{},
+		ContainerDefinitions: []*ecs.ContainerDefinition{},
+		Volumes:              []*ecs.Volume{},
 	}
 
 	project, err := docker.NewProject(&docker.Context{
@@ -29,7 +29,7 @@ func TransformComposeFile(composeFile string, projectName string) (*amazonecs.Re
 	}
 
 	for name, config := range project.Configs {
-		var def = amazonecs.ContainerDefinition{
+		var def = ecs.ContainerDefinition{
 			Name: aws.String(name),
 		}
 
@@ -84,10 +84,10 @@ func TransformComposeFile(composeFile string, projectName string) (*amazonecs.Re
 		}
 
 		if slice := config.Environment.Slice(); len(slice) > 0 {
-			def.Environment = []*amazonecs.KeyValuePair{}
+			def.Environment = []*ecs.KeyValuePair{}
 			for _, val := range slice {
 				parts := strings.SplitN(val, "=", 2)
-				def.Environment = append(def.Environment, &amazonecs.KeyValuePair{
+				def.Environment = append(def.Environment, &ecs.KeyValuePair{
 					Name:  aws.String(parts[0]),
 					Value: aws.String(parts[1]),
 				})
@@ -95,10 +95,10 @@ func TransformComposeFile(composeFile string, projectName string) (*amazonecs.Re
 		}
 
 		if ports := config.Ports; len(ports) > 0 {
-			def.PortMappings = []*amazonecs.PortMapping{}
+			def.PortMappings = []*ecs.PortMapping{}
 			for _, val := range ports {
 				parts := strings.Split(val, ":")
-				mapping := &amazonecs.PortMapping{}
+				mapping := &ecs.PortMapping{}
 
 				// TODO: support host to map to
 				if len(parts) > 0 {
@@ -139,19 +139,19 @@ func TransformComposeFile(composeFile string, projectName string) (*amazonecs.Re
 		}
 
 		if vols := config.Volumes; len(vols) > 0 {
-			def.MountPoints = []*amazonecs.MountPoint{}
+			def.MountPoints = []*ecs.MountPoint{}
 			for idx, vol := range vols {
 				parts := strings.Split(vol, ":")
 				volumeName := fmt.Sprintf("%s-vol%d", name, idx)
 
-				volume := amazonecs.Volume{
-					Host: &amazonecs.HostVolumeProperties{
+				volume := ecs.Volume{
+					Host: &ecs.HostVolumeProperties{
 						SourcePath: aws.String(parts[0]),
 					},
 					Name: aws.String(volumeName),
 				}
 
-				mount := amazonecs.MountPoint{
+				mount := ecs.MountPoint{
 					SourceVolume:  aws.String(volumeName),
 					ContainerPath: aws.String(parts[1]),
 				}
@@ -166,9 +166,9 @@ func TransformComposeFile(composeFile string, projectName string) (*amazonecs.Re
 		}
 
 		if volsFrom := config.VolumesFrom; len(volsFrom) > 0 {
-			def.VolumesFrom = []*amazonecs.VolumeFrom{}
+			def.VolumesFrom = []*ecs.VolumeFrom{}
 			for _, container := range volsFrom {
-				def.VolumesFrom = append(def.VolumesFrom, &amazonecs.VolumeFrom{
+				def.VolumesFrom = append(def.VolumesFrom, &ecs.VolumeFrom{
 					SourceContainer: aws.String(container),
 				})
 			}

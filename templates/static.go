@@ -186,8 +186,8 @@ func FSMustString(useLocal bool, name string) string {
 
 var _escData = map[string]*_escFile{
 
-	"/cloudformation/templates/build/ecs-service.json": {
-		local:   "cloudformation/templates/build/ecs-service.json",
+	"/templates/build/ecs-service.json": {
+		local:   "templates/build/ecs-service.json",
 		size:    5251,
 		modtime: 1448600177,
 		compressed: `
@@ -215,8 +215,8 @@ VkjlOhb2wyM1sT7kYqAeDxlpOJ7aTyd/gg2lzkjE09fX2xwZS6MRGoij2SeHe5R+92+7e9TharwlH4KY
 `,
 	},
 
-	"/cloudformation/templates/build/ecs-stack.json": {
-		local:   "cloudformation/templates/build/ecs-stack.json",
+	"/templates/build/ecs-stack.json": {
+		local:   "templates/build/ecs-stack.json",
 		size:    12360,
 		modtime: 1448595006,
 		compressed: `
@@ -263,8 +263,8 @@ X6jUtLxAOuwdzZKuurxZfwlzdr+CtM+o/fZASWmEdJchHpq7iquE5Wfl/x1Kjfw52N1Ogi47k5HuNBc3
 `,
 	},
 
-	"/cloudformation/templates/build/vpc.json": {
-		local:   "cloudformation/templates/build/vpc.json",
+	"/templates/build/vpc.json": {
+		local:   "templates/build/vpc.json",
 		size:    3348,
 		modtime: 1448510745,
 		compressed: `
@@ -286,18 +286,13 @@ HP0LAAD//1i9GBwUDQAA
 		local: "/",
 	},
 
-	"/cloudformation": {
+	"/templates": {
 		isDir: true,
-		local: "/cloudformation",
+		local: "/templates",
 	},
 
-	"/cloudformation/templates": {
+	"/templates/build": {
 		isDir: true,
-		local: "/cloudformation/templates",
-	},
-
-	"/cloudformation/templates/build": {
-		isDir: true,
-		local: "/cloudformation/templates/build",
+		local: "/templates/build",
 	},
 }
