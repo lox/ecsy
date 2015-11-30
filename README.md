@@ -25,7 +25,7 @@ ecs-up create-service --cluster example -f docker-compose.yml
 
 ```bash
 # Creates and deploys a new task with the helloworld container updated with a new image tag
-ecs-deploy --cluster example -f docker-compose.yml helloworld=v2
+ecs-deploy --cluster example -f docker-compose.yml helloworld=:v2
 ```
 
 ### TODO
