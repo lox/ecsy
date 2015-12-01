@@ -13,6 +13,7 @@ import (
 	"github.com/99designs/ecs-cli/cli"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/ecs"
 )
 
 var (
@@ -63,8 +64,8 @@ func main() {
 	})
 }
 
-func parseImageMap(s string) (ecs.ContainerImageMap, error) {
-	m := ecs.ContainerImageMap{}
+func parseImageMap(s string) (map[string]string, error) {
+	m := map[string]string{}
 
 	if s == "" {
 		return m, nil
