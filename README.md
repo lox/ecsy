@@ -7,7 +7,10 @@ They use cloudformations internally, which can be used without the tooling if re
 
 ## Installing
 
-
+```
+export GO15VENDOREXPERIMENT=1
+go install -v github.com/99designs/ecs-cli/cli/...
+```
 
 ## Usage
 
