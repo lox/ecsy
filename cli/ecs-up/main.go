@@ -25,9 +25,11 @@ func main() {
 		debug = kingpin.Flag("debug", "Show debugging output").Bool()
 
 		// create-cluster command
-		create        = kingpin.Command("create-cluster", "Create an ECS cluster")
-		createCluster = create.Flag("cluster", "The name of the ECS cluster to create").Required().String()
-		createKeyName = create.Flag("keyname", "The EC2 keypair to use for instance").Default("default").String()
+		create              = kingpin.Command("create-cluster", "Create an ECS cluster")
+		createCluster       = create.Flag("cluster", "The name of the ECS cluster to create").Required().String()
+		createKeyName       = create.Flag("keyname", "The EC2 keypair to use for instance").Default("default").String()
+		createInstanceType  = create.Flag("type", "The EC2 instance type to use").Default("t2.micro").String()
+		createInstanceCount = create.Flag("count", "The number of instances to use").Default("3").Int()
 
 		// create-service command
 		createSvc            = kingpin.Command("create-service", "Create an ECS service for your app")
@@ -62,7 +64,9 @@ func main() {
 		CreateClusterCommand(ui, CreateClusterCommandInput{
 			ClusterName: *createCluster,
 			Parameters: EcsClusterParameters{
-				KeyName: *createKeyName,
+				KeyName:       *createKeyName,
+				InstanceType:  *createInstanceType,
+				InstanceCount: *createInstanceCount,
 			},
 		})
 

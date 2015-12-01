@@ -13,7 +13,9 @@ import (
 )
 
 type EcsClusterParameters struct {
-	KeyName string
+	KeyName       string
+	InstanceType  string
+	InstanceCount int
 }
 
 type CreateClusterCommandInput struct {
@@ -33,8 +35,10 @@ func CreateClusterCommand(ui *cli.Ui, input CreateClusterCommandInput) {
 	ui.Printf("Creating cloudformation stack %s", stackName)
 
 	err = ecscli.CreateStack(cfnSvc, stackName, templates.EcsStack(), map[string]string{
-		"KeyName":    input.Parameters.KeyName,
-		"ECSCluster": input.ClusterName,
+		"KeyName":         input.Parameters.KeyName,
+		"ECSCluster":      input.ClusterName,
+		"InstanceType":    input.Parameters.InstanceType,
+		"DesiredCapacity": string(input.Parameters.InstanceCount),
 	})
 	if err != nil {
 		ui.Fatal(err)

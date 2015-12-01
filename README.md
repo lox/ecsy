@@ -18,7 +18,7 @@ go install -v github.com/99designs/ecs-cli/cli/...
 
 ```bash
 # create an ecs cluster and supporting infrastructure (vpc, autoscale group, security groups, etc)
-ecs-up create-cluster --cluster example --keyname lox --type m4.large --size 4
+ecs-up create-cluster --cluster example --keyname lox --type m4.large --count 4
 
 # create an ecs task and service from a docker-compose file
 ecs-up create-service --cluster example -f docker-compose.yml
