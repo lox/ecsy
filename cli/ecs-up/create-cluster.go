@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/99designs/ecs-cli"
@@ -38,7 +39,7 @@ func CreateClusterCommand(ui *cli.Ui, input CreateClusterCommandInput) {
 		"KeyName":         input.Parameters.KeyName,
 		"ECSCluster":      input.ClusterName,
 		"InstanceType":    input.Parameters.InstanceType,
-		"DesiredCapacity": string(input.Parameters.InstanceCount),
+		"DesiredCapacity": strconv.Itoa(input.Parameters.InstanceCount),
 	})
 	if err != nil {
 		ui.Fatal(err)
