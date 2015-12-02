@@ -25,11 +25,17 @@ func main() {
 		debug = kingpin.Flag("debug", "Show debugging output").Bool()
 
 		// create-cluster command
-		create              = kingpin.Command("create-cluster", "Create an ECS cluster")
-		createCluster       = create.Flag("cluster", "The name of the ECS cluster to create").Required().String()
-		createKeyName       = create.Flag("keyname", "The EC2 keypair to use for instance").Default("default").String()
-		createInstanceType  = create.Flag("type", "The EC2 instance type to use").Default("t2.micro").String()
-		createInstanceCount = create.Flag("count", "The number of instances to use").Default("3").Int()
+		create                  = kingpin.Command("create-cluster", "Create an ECS cluster")
+		createCluster           = create.Flag("cluster", "The name of the ECS cluster to create").Required().String()
+		createKeyName           = create.Flag("keyname", "The EC2 keypair to use for instance").Default("default").String()
+		createInstanceType      = create.Flag("type", "The EC2 instance type to use").Default("t2.micro").String()
+		createInstanceCount     = create.Flag("count", "The number of instances to use").Default("3").Int()
+		createDockerUsername    = create.Flag("docker-username", "The docker Username to use").String()
+		createDockerPassword    = create.Flag("docker-password", "The docker Password to use").String()
+		createDockerEmail       = create.Flag("docker-email", "The docker Email to use").String()
+		createDatadogKey        = create.Flag("datadog-key", "The datadog api key").String()
+		createLogspoutTarget    = create.Flag("logspout-target", "The endpoint to push logspout output to").String()
+		createAuthorizedKeysUrl = create.Flag("authorized-keys", "A URL to fetch a SSH authorized_keys file from.").String()
 
 		// create-service command
 		createSvc            = kingpin.Command("create-service", "Create an ECS service for your app")
@@ -64,9 +70,15 @@ func main() {
 		CreateClusterCommand(ui, CreateClusterCommandInput{
 			ClusterName: *createCluster,
 			Parameters: EcsClusterParameters{
-				KeyName:       *createKeyName,
-				InstanceType:  *createInstanceType,
-				InstanceCount: *createInstanceCount,
+				KeyName:            *createKeyName,
+				InstanceType:       *createInstanceType,
+				InstanceCount:      *createInstanceCount,
+				DockerHubUsername:  *createDockerUsername,
+				DockerHubPassword:  *createDockerPassword,
+				DockerHubEmail:     *createDockerEmail,
+				DatadogApiKey:      *createDatadogKey,
+				LogspoutTarget:     *createLogspoutTarget,
+				AuthorizedUsersUrl: *createAuthorizedKeysUrl,
 			},
 		})
 

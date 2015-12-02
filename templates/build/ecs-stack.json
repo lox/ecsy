@@ -83,6 +83,16 @@
     "ECSCluster": {
       "Type": "String",
       "Description": "The name of the ECS cluster"
+    },
+    "LogspoutTarget": {
+      "Type": "String",
+      "Description": "Optional. logspout destination eg papertrail endpoint.",
+      "Default": ""
+    },
+    "DatadogApiKey": {
+      "Type": "String",
+      "Description": "Optional. The datadog API key to push docker events into datadog.",
+      "Default": ""
     }
   },
   "Outputs": {
@@ -317,7 +327,19 @@
                       {
                         "Ref": "ECSCluster"
                       },
-                      "\n"
+                      "\nECS_ENGINE_AUTH_TYPE=docker\nECS_ENGINE_AUTH_DATA={\"https://index.docker.io/v1/\":{\"username\":\"",
+                      {
+                        "Ref": "DockerHubUsername"
+                      },
+                      "\",\"password\":\"",
+                      {
+                        "Ref": "DockerHubPassword"
+                      },
+                      "\",\"email\":\"",
+                      {
+                        "Ref": "DockerHubEmail"
+                      },
+                      "\"}}\n"
                     ]
                   ]
                 },
@@ -350,6 +372,62 @@
             "commands": {
               "fetch-authorized-users": {
                 "command": "/etc/cron.hourly/authorized_keys"
+              },
+              "logspout": {
+                "test": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "test -n '",
+                      {
+                        "Ref": "LogspoutTarget"
+                      },
+                      "'"
+                    ]
+                  ]
+                },
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "#!/bin/bash -eu\n/usr/bin/docker run -d \\\n  --name=\"logspout\" \\\n  --restart=always \\\n  --hostname `hostname` \\\n  --volume=/var/run/docker.sock:/tmp/docker.sock \\\n  gliderlabs/logspout \\\n  ",
+                      {
+                        "Ref": "LogspoutTarget"
+                      },
+                      " &> /home/ec2-user/logspout.boot.log\n"
+                    ]
+                  ]
+                }
+              },
+              "datadog": {
+                "test": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "test -n '",
+                      {
+                        "Ref": "DatadogApiKey"
+                      },
+                      "'"
+                    ]
+                  ]
+                },
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "#!/bin/bash -eu\n/usr/bin/docker run -d \\\n  --restart=always \\\n  --name dd-agent \\\n  --hostname `hostname` \\\n  -p 172.17.42.1:8125:8125/udp \\\n  -e 'TAGS=cluster:",
+                      {
+                        "Ref": "ECSCluster"
+                      },
+                      "' \\\n  -e 'API_KEY=",
+                      {
+                        "Ref": "DatadogApiKey"
+                      },
+                      "' \\\n  -v /var/run/docker.sock:/var/run/docker.sock \\\n  -v /proc/:/host/proc/:ro \\\n  -v /cgroup/:/host/sys/fs/cgroup:ro \\\n  datadog/docker-dd-agent &> /home/ec2-user/datadog.boot.log\n"
+                    ]
+                  ]
+                }
               }
             }
           }
