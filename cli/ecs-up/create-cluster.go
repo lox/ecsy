@@ -14,9 +14,15 @@ import (
 )
 
 type EcsClusterParameters struct {
-	KeyName       string
-	InstanceType  string
-	InstanceCount int
+	KeyName            string
+	InstanceType       string
+	InstanceCount      int
+	DockerHubUsername  string
+	DockerHubPassword  string
+	DockerHubEmail     string
+	DatadogApiKey      string
+	LogspoutTarget     string
+	AuthorizedUsersUrl string
 }
 
 type CreateClusterCommandInput struct {
@@ -36,10 +42,16 @@ func CreateClusterCommand(ui *cli.Ui, input CreateClusterCommandInput) {
 	ui.Printf("Creating cloudformation stack %s", stackName)
 
 	err = ecscli.CreateStack(cfnSvc, stackName, templates.EcsStack(), map[string]string{
-		"KeyName":         input.Parameters.KeyName,
-		"ECSCluster":      input.ClusterName,
-		"InstanceType":    input.Parameters.InstanceType,
-		"DesiredCapacity": strconv.Itoa(input.Parameters.InstanceCount),
+		"KeyName":            input.Parameters.KeyName,
+		"ECSCluster":         input.ClusterName,
+		"InstanceType":       input.Parameters.InstanceType,
+		"DesiredCapacity":    strconv.Itoa(input.Parameters.InstanceCount),
+		"DockerHubUsername":  input.Parameters.DockerHubUsername,
+		"DockerHubPassword":  input.Parameters.DockerHubPassword,
+		"DockerHubEmail":     input.Parameters.DockerHubEmail,
+		"LogspoutTarget":     input.Parameters.LogspoutTarget,
+		"DatadogApiKey":      input.Parameters.DatadogApiKey,
+		"AuthorizedUsersUrl": input.Parameters.AuthorizedUsersUrl,
 	})
 	if err != nil {
 		ui.Fatal(err)

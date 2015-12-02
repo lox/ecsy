@@ -85,6 +85,16 @@ Parameters:
     Type: String
     Description: The name of the ECS cluster
 
+  LogspoutTarget:
+    Type: String
+    Description: Optional. logspout destination eg papertrail endpoint.
+    Default: ""
+
+  DatadogApiKey:
+    Type: String
+    Description: Optional. The datadog API key to push docker events into datadog.
+    Default: ""
+
 Outputs:
   StackType:
     Value: "ecs-former::ecs-stack"
@@ -183,6 +193,8 @@ Resources:
             /etc/ecs/ecs.config:
               content: |
                 ECS_CLUSTER=$(ECSCluster)
+                ECS_ENGINE_AUTH_TYPE=docker
+                ECS_ENGINE_AUTH_DATA={"https://index.docker.io/v1/":{"username":"$(DockerHubUsername)","password":"$(DockerHubPassword)","email":"$(DockerHubEmail)"}}
               mode: "000600"
               owner: root
               group: root
@@ -200,6 +212,34 @@ Resources:
           commands:
             fetch-authorized-users:
               command: /etc/cron.hourly/authorized_keys
+
+            logspout:
+              test: "test -n '$(LogspoutTarget)'"
+              command: |
+                #!/bin/bash -eu
+                /usr/bin/docker run -d \
+                  --name="logspout" \
+                  --restart=always \
+                  --hostname `hostname` \
+                  --volume=/var/run/docker.sock:/tmp/docker.sock \
+                  gliderlabs/logspout \
+                  $(LogspoutTarget) &> /home/ec2-user/logspout.boot.log
+
+            datadog:
+              test: "test -n '$(DatadogApiKey)'"
+              command: |
+                #!/bin/bash -eu
+                /usr/bin/docker run -d \
+                  --restart=always \
+                  --name dd-agent \
+                  --hostname `hostname` \
+                  -p 172.17.42.1:8125:8125/udp \
+                  -e 'TAGS=cluster:$(ECSCluster)' \
+                  -e 'API_KEY=$(DatadogApiKey)' \
+                  -v /var/run/docker.sock:/var/run/docker.sock \
+                  -v /proc/:/host/proc/:ro \
+                  -v /cgroup/:/host/sys/fs/cgroup:ro \
+                  datadog/docker-dd-agent &> /home/ec2-user/datadog.boot.log
 
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
