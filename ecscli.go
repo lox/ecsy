@@ -6,25 +6,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
-func FindClusterStack(svc *cloudformation.CloudFormation, clusterName string) (*cloudformation.Stack, error) {
-	clusterStack, err := FindStackByOutputs(svc, map[string]string{
-		"StackType":  "ecs-former::ecs-stack",
-		"ECSCluster": clusterName,
-	})
-	if err != nil {
-		if err == ErrNoStacksFound {
-			return nil, fmt.Errorf(
-				"Failed to find a cloudformation stack for cluster %q", clusterName)
-		} else {
-			return nil, err
-		}
-	}
-
-	if err = StackOutputMap(clusterStack).RequireKeys("Subnets", "Vpc", "SecurityGroup"); err != nil {
-		return nil, err
-	}
-
-	return clusterStack, err
+type NetworkOutputs struct {
+	StackName     string
+	Vpc           string
+	Subnets       string
+	SecurityGroup string
 }
 
 func FindServiceStack(svc *cloudformation.CloudFormation, clusterName, taskFamily string) (*cloudformation.Stack, error) {
@@ -40,4 +26,24 @@ func FindServiceStack(svc *cloudformation.CloudFormation, clusterName, taskFamil
 		}
 	}
 	return serviceStack, err
+}
+
+func FindNetworkStack(svc cfnInterface, clusterName string) (NetworkOutputs, error) {
+	stackName := clusterName + "-network"
+
+	outputs, err := StackOutputs(svc, stackName)
+	if err != nil {
+		return NetworkOutputs{StackName: stackName}, err
+	}
+
+	if err := outputs.RequireKeys("Vpc", "Subnets", "SecurityGroup"); err != nil {
+		return NetworkOutputs{StackName: stackName}, err
+	}
+
+	return NetworkOutputs{
+		StackName:     stackName,
+		Vpc:           outputs["Vpc"],
+		Subnets:       outputs["Subnets"],
+		SecurityGroup: outputs["SecurityGroup"],
+	}, nil
 }

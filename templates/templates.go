@@ -43,3 +43,11 @@ func EcsService() string {
 	}
 	return string(b)
 }
+
+func NetworkStack() string {
+	b, err := readTemplateBytes("/templates/build/network-stack.json")
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
