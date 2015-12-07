@@ -202,6 +202,13 @@ Resources:
               mode: "000600"
               owner: root
               group: root
+            /home/ec2-user/.dockercfg:
+              content: >
+                {"https://index.docker.io/v1/":{"username":"$(DockerHubUsername)","password":"$(DockerHubPassword)","email":"$(DockerHubEmail)"}}
+              owner: ec2-user
+              group: ec2-user
+              mode: '00400'
+              authentication: S3AccessCreds
             /etc/cron.hourly/authorized_keys:
               content: |
                 #!/bin/bash -eu
