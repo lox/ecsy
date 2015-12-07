@@ -9,6 +9,9 @@ Outputs:
     Value:
       !Join [ ",", [ $(Subnet0), $(Subnet1), $(Subnet2) ] ]
 
+  SecurityGroup:
+    Value: $(SecurityGroup)
+
 Resources:
   Vpc:
     Type: AWS::EC2::VPC
@@ -79,3 +82,23 @@ Resources:
     Properties:
       SubnetId: $(Subnet2)
       RouteTableId: $(Routes)
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: VPC/EC2 Security Group
+      VpcId: $(Vpc)
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  SecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: $(SecurityGroup)
+      IpProtocol: tcp
+      FromPort: 0
+      ToPort: 65535
+      SourceSecurityGroupId: $(SecurityGroup)

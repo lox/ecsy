@@ -10,17 +10,17 @@ install: templates
 	go install -ldflags="$(FLAGS)" github.com/99designs/ecs-cli/cli/ecs-deploy
 	go install -ldflags="$(FLAGS)" github.com/99designs/ecs-cli/cli/ecs-up
 
-templates: templates/build/ecs-service.json templates/build/ecs-stack.json templates/build/vpc.json
+templates: templates/build/ecs-service.json templates/build/ecs-stack.json templates/build/network-stack.json
 	esc -o templates/static.go -pkg templates templates/build
 
 clean:
 	rm $(wildcard templates/build/*.json)
 
-templates/build/ecs-stack.json: templates/src/ecs-stack.yml templates/src/vpc.yml
+templates/build/ecs-stack.json: templates/src/ecs-stack.yml
 	@mkdir -p templates/build/
 	cfoo $^ > $@
 
-templates/build/vpc.json: templates/src/vpc.yml
+templates/build/network-stack.json: templates/src/network-stack.yml
 	@mkdir -p templates/build/
 	cfoo $^ > $@
 

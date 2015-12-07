@@ -1,6 +1,14 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
+    "Subnets": {
+      "Description": "A comma separated list of subnets to put the EC2 instances into",
+      "Type": "CommaDelimitedList"
+    },
+    "SecurityGroup": {
+      "Description": "The security group to put the EC2 instances into",
+      "Type": "String"
+    },
     "KeyName": {
       "Description": "The ssh keypair used to access the ecs instances",
       "Type": "AWS::EC2::KeyPair::KeyName"
@@ -103,34 +111,6 @@
       "Value": {
         "Ref": "ECSCluster"
       }
-    },
-    "SecurityGroup": {
-      "Value": {
-        "Ref": "SecurityGroup"
-      }
-    },
-    "Vpc": {
-      "Value": {
-        "Ref": "Vpc"
-      }
-    },
-    "Subnets": {
-      "Value": {
-        "Fn::Join": [
-          ",",
-          [
-            {
-              "Ref": "Subnet0"
-            },
-            {
-              "Ref": "Subnet1"
-            },
-            {
-              "Ref": "Subnet2"
-            }
-          ]
-        ]
-      }
     }
   },
   "Mappings": {
@@ -213,17 +193,9 @@
     "ECSAutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
-        "VPCZoneIdentifier": [
-          {
-            "Ref": "Subnet0"
-          },
-          {
-            "Ref": "Subnet1"
-          },
-          {
-            "Ref": "Subnet2"
-          }
-        ],
+        "VPCZoneIdentifier": {
+          "Ref": "Subnets"
+        },
         "LaunchConfigurationName": {
           "Ref": "LaunchConfiguration"
         },
@@ -431,178 +403,6 @@
               }
             }
           }
-        }
-      }
-    },
-    "SecurityGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "Properties": {
-        "GroupDescription": "VPC/EC2 Security Group",
-        "VpcId": {
-          "Ref": "Vpc"
-        },
-        "SecurityGroupIngress": [
-          {
-            "IpProtocol": "tcp",
-            "FromPort": 22,
-            "ToPort": 22,
-            "CidrIp": "0.0.0.0/0"
-          }
-        ]
-      }
-    },
-    "SecurityGroupIngress": {
-      "Type": "AWS::EC2::SecurityGroupIngress",
-      "Properties": {
-        "GroupId": {
-          "Ref": "SecurityGroup"
-        },
-        "IpProtocol": "tcp",
-        "FromPort": 0,
-        "ToPort": 65535,
-        "SourceSecurityGroupId": {
-          "Ref": "SecurityGroup"
-        }
-      }
-    },
-    "Vpc": {
-      "Type": "AWS::EC2::VPC",
-      "Properties": {
-        "CidrBlock": "10.0.0.0/16",
-        "InstanceTenancy": "default",
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": {
-              "Ref": "AWS::StackName"
-            }
-          }
-        ]
-      }
-    },
-    "Gateway": {
-      "Type": "AWS::EC2::InternetGateway",
-      "Properties": {
-      }
-    },
-    "GatewayAttachment": {
-      "Type": "AWS::EC2::VPCGatewayAttachment",
-      "Properties": {
-        "InternetGatewayId": {
-          "Ref": "Gateway"
-        },
-        "VpcId": {
-          "Ref": "Vpc"
-        }
-      }
-    },
-    "Subnet0": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "AvailabilityZone": {
-          "Fn::Select": [
-            0,
-            {
-              "Fn::GetAZs": {
-                "Ref": "AWS::Region"
-              }
-            }
-          ]
-        },
-        "CidrBlock": "10.0.1.0/24",
-        "VpcId": {
-          "Ref": "Vpc"
-        }
-      }
-    },
-    "Subnet1": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "AvailabilityZone": {
-          "Fn::Select": [
-            1,
-            {
-              "Fn::GetAZs": {
-                "Ref": "AWS::Region"
-              }
-            }
-          ]
-        },
-        "CidrBlock": "10.0.2.0/24",
-        "VpcId": {
-          "Ref": "Vpc"
-        }
-      }
-    },
-    "Subnet2": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "AvailabilityZone": {
-          "Fn::Select": [
-            2,
-            {
-              "Fn::GetAZs": {
-                "Ref": "AWS::Region"
-              }
-            }
-          ]
-        },
-        "CidrBlock": "10.0.3.0/24",
-        "VpcId": {
-          "Ref": "Vpc"
-        }
-      }
-    },
-    "Routes": {
-      "Type": "AWS::EC2::RouteTable",
-      "Properties": {
-        "VpcId": {
-          "Ref": "Vpc"
-        }
-      }
-    },
-    "RouteDefault": {
-      "Type": "AWS::EC2::Route",
-      "Properties": {
-        "DestinationCidrBlock": "0.0.0.0/0",
-        "GatewayId": {
-          "Ref": "Gateway"
-        },
-        "RouteTableId": {
-          "Ref": "Routes"
-        }
-      }
-    },
-    "Subnet0Routes": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "SubnetId": {
-          "Ref": "Subnet0"
-        },
-        "RouteTableId": {
-          "Ref": "Routes"
-        }
-      }
-    },
-    "Subnet1Routes": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "SubnetId": {
-          "Ref": "Subnet1"
-        },
-        "RouteTableId": {
-          "Ref": "Routes"
-        }
-      }
-    },
-    "Subnet2Routes": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "SubnetId": {
-          "Ref": "Subnet2"
-        },
-        "RouteTableId": {
-          "Ref": "Routes"
         }
       }
     }

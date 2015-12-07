@@ -137,6 +137,8 @@ func PollStackEvents(svc cfnInterface, stackName string, f func(e *cloudformatio
 				break
 			}
 		}
+
+		time.Sleep(1 * time.Second)
 	}
 
 	return nil

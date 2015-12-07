@@ -40,21 +40,20 @@ func CreateServiceCommand(ui *cli.Ui, input CreateServiceCommandInput) {
 	}
 	ui.Printf("Registered task definition %s:%d", *resp.TaskDefinition.Family, *resp.TaskDefinition.Revision)
 
-	clusterStack, err := ecscli.FindClusterStack(cfnSvc, input.ClusterName)
+	network, err := ecscli.FindNetworkStack(cfnSvc, input.ClusterName)
 	if err != nil {
 		ui.Fatal(err)
 	}
 
-	log.Printf("Found cloudformation stack %s for ECS cluster", *clusterStack.StackName)
+	log.Printf("Found cloudformation stack %s for ECS cluster", network.StackName)
 
-	outputs := ecscli.StackOutputMap(clusterStack)
 	params := map[string]string{
 		"ECSCluster":       input.ClusterName,
 		"TaskFamily":       *resp.TaskDefinition.Family,
 		"TaskDefinition":   *resp.TaskDefinition.TaskDefinitionArn,
-		"Subnets":          outputs["Subnets"],
-		"Vpc":              outputs["Vpc"],
-		"ECSSecurityGroup": outputs["SecurityGroup"],
+		"Subnets":          network.Subnets,
+		"Vpc":              network.Vpc,
+		"ECSSecurityGroup": network.SecurityGroup,
 	}
 
 	exposedPorts := ecscli.ExposedPorts(resp.TaskDefinition)
@@ -103,7 +102,7 @@ func CreateServiceCommand(ui *cli.Ui, input CreateServiceCommandInput) {
 	}
 
 	ui.Printf("Waiting for service to reach a steady state.")
-	err = ecscli.PollDeployment(ecsSvc, serviceResp.Services[0], outputs["ECSCluster"], func(e *ecs.ServiceEvent) {
+	err = ecscli.PollDeployment(ecsSvc, serviceResp.Services[0], input.ClusterName, func(e *ecs.ServiceEvent) {
 		log.Println(*e.Message)
 	})
 

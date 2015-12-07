@@ -23,6 +23,11 @@
           ]
         ]
       }
+    },
+    "SecurityGroup": {
+      "Value": {
+        "Ref": "SecurityGroup"
+      }
     }
   },
   "Resources": {
@@ -164,6 +169,37 @@
         },
         "RouteTableId": {
           "Ref": "Routes"
+        }
+      }
+    },
+    "SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "VPC/EC2 Security Group",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "SecurityGroupIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 0,
+        "ToPort": 65535,
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroup"
         }
       }
     }

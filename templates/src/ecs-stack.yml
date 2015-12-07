@@ -1,8 +1,15 @@
 
 ## Creates Amazon Elastic Container Service cluster
 ## http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-ecs.html
-
 Parameters:
+  Subnets:
+    Description: A comma separated list of subnets to put the EC2 instances into
+    Type: CommaDelimitedList
+
+  SecurityGroup:
+    Description: The security group to put the EC2 instances into
+    Type: String
+
   KeyName:
     Description: The ssh keypair used to access the ecs instances
     Type: AWS::EC2::KeyPair::KeyName
@@ -102,9 +109,6 @@ Outputs:
   ECSCluster:
     Value: $(ECSCluster)
 
-  SecurityGroup:
-    Value: $(SecurityGroup)
-
 # amzn-ami-2015.09.b-amazon-ecs-optimized
 # See http://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_container_instance.html
 Mappings:
@@ -153,7 +157,7 @@ Resources:
   ECSAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      VPCZoneIdentifier: [ $(Subnet0), $(Subnet1), $(Subnet2) ]
+      VPCZoneIdentifier: $(Subnets)
       LaunchConfigurationName: $(LaunchConfiguration)
       MinSize: $(MinSize)
       MaxSize: $(MaxSize)
@@ -240,23 +244,3 @@ Resources:
                   -v /proc/:/host/proc/:ro \
                   -v /cgroup/:/host/sys/fs/cgroup:ro \
                   datadog/docker-dd-agent &> /home/ec2-user/datadog.boot.log
-
-  SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: VPC/EC2 Security Group
-      VpcId: $(Vpc)
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-
-  SecurityGroupIngress:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: $(SecurityGroup)
-      IpProtocol: tcp
-      FromPort: 0
-      ToPort: 65535
-      SourceSecurityGroupId: $(SecurityGroup)
