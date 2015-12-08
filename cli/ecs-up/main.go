@@ -42,6 +42,7 @@ func main() {
 		createSvcCluster     = createSvc.Flag("cluster", "The ECS cluster to use").Required().String()
 		createSvcProjectName = createSvc.Flag("project-name", "The name of the compose project").Short('p').Default(currentDirName()).String()
 		createSvcFile        = createSvc.Flag("file", "The path to the docker-compose.yml file").Short('f').Default("docker-compose.yml").String()
+		createSvcHealthcheck = createSvc.Flag("healthcheck", "Path to the healthcheck route").Default("/").String()
 
 		update = kingpin.Command("update-cluster", "Updates an existing ECS cluster")
 		// updateName    = update.Arg("name", "The name of the ECS stack to create").Required().String()
@@ -84,9 +85,10 @@ func main() {
 
 	case createSvc.FullCommand():
 		CreateServiceCommand(ui, CreateServiceCommandInput{
-			ClusterName: *createSvcCluster,
-			ProjectName: *createSvcProjectName,
-			ComposeFile: *createSvcFile,
+			ClusterName:    *createSvcCluster,
+			ProjectName:    *createSvcProjectName,
+			ComposeFile:    *createSvcFile,
+			HealthCheckUrl: *createSvcHealthcheck,
 		})
 
 	case update.FullCommand():

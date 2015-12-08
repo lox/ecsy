@@ -28,6 +28,7 @@ func main() {
 		projectName = kingpin.Flag("project-name", "The name of the project").Short('p').Default(currentDirName()).String()
 		composeFile = kingpin.Flag("file", "The docker-compose file to use").Short('f').Default("docker-compose.yml").String()
 		cluster     = kingpin.Flag("cluster", "The ECS cluster to use").Short('c').Default("default").String()
+		healthcheck = kingpin.Flag("healthcheck", "Path to the healthcheck route").Default("/").String()
 		imageTags   = kingpin.Arg("imagetags", "Tags in the form image=tag to apply to the task").String()
 	)
 
@@ -60,6 +61,7 @@ func main() {
 		ClusterName:     *cluster,
 		ProjectName:     *projectName,
 		ComposeFile:     *composeFile,
+		HealthCheckUrl:  *healthcheck,
 		ContainerImages: imageMap,
 	})
 }

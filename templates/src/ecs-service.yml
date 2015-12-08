@@ -38,6 +38,11 @@ Parameters:
     Type: CommaDelimitedList
     Description: Subnets to create the ELB in
 
+  HealthCheckUrl:
+    Type: String
+    Description: The URL to hit when doing healthchecks from the ELB
+    Default: /
+
 Outputs:
   StackType:
     Value: "ecs-former::ecs-service"
@@ -76,7 +81,7 @@ Resources:
           InstancePort: $(ContainerPort)
           Protocol: HTTP
       HealthCheck:
-        Target: HTTP:$(ContainerPort)/
+        Target: HTTP:$(ContainerPort)$(HealthCheckUrl)
         HealthyThreshold: 2
         UnhealthyThreshold: 10
         Interval: 30

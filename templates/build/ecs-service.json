@@ -38,6 +38,11 @@
     "Subnets": {
       "Type": "CommaDelimitedList",
       "Description": "Subnets to create the ELB in"
+    },
+    "HealthCheckUrl": {
+      "Type": "String",
+      "Description": "The URL to hit when doing healthchecks from the ELB",
+      "Default": "/"
     }
   },
   "Outputs": {
@@ -136,7 +141,9 @@
                 {
                   "Ref": "ContainerPort"
                 },
-                "/"
+                {
+                  "Ref": "HealthCheckUrl"
+                }
               ]
             ]
           },

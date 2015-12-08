@@ -15,9 +15,10 @@ import (
 )
 
 type CreateServiceCommandInput struct {
-	ClusterName string
-	ProjectName string
-	ComposeFile string
+	ClusterName    string
+	ProjectName    string
+	ComposeFile    string
+	HealthCheckUrl string
 }
 
 func CreateServiceCommand(ui *cli.Ui, input CreateServiceCommandInput) {
@@ -67,6 +68,7 @@ func CreateServiceCommand(ui *cli.Ui, input CreateServiceCommandInput) {
 		for _, mapping := range mappings {
 			params["ContainerName"] = container
 			params["ContainerPort"] = strconv.FormatInt(*mapping.ContainerPort, 10)
+			params["HealthCheckUrl"] = input.HealthCheckUrl
 			params["ELBPort"] = strconv.FormatInt(*mapping.HostPort, 10)
 		}
 	}
