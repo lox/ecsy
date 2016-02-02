@@ -93,11 +93,6 @@ Parameters:
     Type: String
     Description: The name of the ECS cluster
 
-  LogspoutTarget:
-    Type: String
-    Description: Optional. logspout destination eg papertrail endpoint.
-    Default: ""
-
   DatadogApiKey:
     Type: String
     Description: Optional. The datadog API key to push docker events into datadog.
@@ -158,7 +153,13 @@ Resources:
               - cloudformation:DescribeStackResource
               - ec2:DescribeTags
             Resource: "*"
-      Roles:
+          - Effect: Allow
+            Action:
+              - "logs:Create*"
+              - logs:PutLogEvents
+              - logs:DescribeLogStreams
+            Resource: "arn:aws:logs:*:*:*"
+      oles:
         - $(IAMRole)
 
   ECSAutoScalingGroup:
@@ -194,13 +195,19 @@ Resources:
       KeyName: $(KeyName)
       UserData: !Base64 |
         #!/bin/bash -xve
-        yum install -y aws-cfn-bootstrap
+        yum install -y aws-cfn-bootstrap awslogs
         /opt/aws/bin/cfn-init -v --stack $(AWS::StackName) --resource LaunchConfiguration --region $(AWS::Region)
         /opt/aws/bin/cfn-signal -e \$? --stack $(AWS::StackName) --resource ECSAutoScalingGroup --region $(AWS::Region)
     Metadata:
       AWS::CloudFormation::Init:
         config:
           files:
+            /etc/awslogs/awscli.conf:
+              content: |
+                region = $(AWS::Region)
+              mode: "000600"
+              owner: root
+              group: root
             /etc/ecs/ecs.config:
               content: |
                 ECS_CLUSTER=$(ECSCluster)
@@ -230,19 +237,6 @@ Resources:
           commands:
             fetch-authorized-users:
               command: /etc/cron.hourly/authorized_keys
-
-            logspout:
-              test: "test -n '$(LogspoutTarget)'"
-              command: |
-                #!/bin/bash -eu
-                /usr/bin/docker run -d \
-                  --name="logspout" \
-                  --restart=always \
-                  --hostname `hostname` \
-                  --volume=/var/run/docker.sock:/tmp/docker.sock \
-                  gliderlabs/logspout \
-                  $(LogspoutTarget) &> /home/ec2-user/logspout.boot.log
-
             datadog:
               test: "test -n '$(DatadogApiKey)'"
               command: |
