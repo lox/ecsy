@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/99designs/ecs-cli"
-	"github.com/99designs/ecs-cli/cli"
 	"github.com/99designs/ecs-cli/compose"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
@@ -19,7 +18,7 @@ type DeployCommandInput struct {
 	HealthCheckUrl  string
 }
 
-func DeployCommand(ui *cli.Ui, input DeployCommandInput) {
+func DeployCommand(ui *Ui, input DeployCommandInput) {
 	ui.Printf("Generating task definition from %s", input.ComposeFile)
 	taskDefinitionInput, err := compose.TransformComposeFile(input.ComposeFile, input.ProjectName)
 	if err != nil {

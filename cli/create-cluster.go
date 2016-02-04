@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/99designs/ecs-cli"
-	"github.com/99designs/ecs-cli/cli"
 	"github.com/99designs/ecs-cli/templates"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -29,7 +28,7 @@ type CreateClusterCommandInput struct {
 	Parameters  EcsClusterParameters
 }
 
-func CreateClusterCommand(ui *cli.Ui, input CreateClusterCommandInput) {
+func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 	ui.Printf("Creating cluster %s", input.ClusterName)
 
 	_, err := ecsSvc.CreateCluster(&ecs.CreateClusterInput{

@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/99designs/ecs-cli"
-	"github.com/99designs/ecs-cli/cli"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
@@ -10,7 +9,7 @@ type PollCommandInput struct {
 	StackName string
 }
 
-func PollCommand(ui *cli.Ui, input PollCommandInput) {
+func PollCommand(ui *Ui, input PollCommandInput) {
 	err := ecscli.PollStackEvents(cfnSvc, input.StackName, func(event *cloudformation.StackEvent) {
 		ui.Printf("%s\n", ecscli.FormatStackEvent(event))
 	})

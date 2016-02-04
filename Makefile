@@ -3,12 +3,10 @@ VERSION=$(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "
 FLAGS=-X main.Version=$(VERSION)
 
 build: templates
-	go build -ldflags="$(FLAGS)" github.com/99designs/ecs-cli/cli/ecs-deploy
-	go build -ldflags="$(FLAGS)" github.com/99designs/ecs-cli/cli/ecs-up
+	go build -ldflags="$(FLAGS)" -o ecs-cli github.com/99designs/ecs-cli/cli
 
 install: templates
-	go install -ldflags="$(FLAGS)" github.com/99designs/ecs-cli/cli/ecs-deploy
-	go install -ldflags="$(FLAGS)" github.com/99designs/ecs-cli/cli/ecs-up
+	go install -ldflags="$(FLAGS)" -o ecs-cli github.com/99designs/ecs-cli/cli
 
 templates: templates/build/ecs-service.json templates/build/ecs-stack.json templates/build/network-stack.json
 	esc -o templates/static.go -pkg templates templates/build
