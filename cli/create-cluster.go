@@ -69,7 +69,7 @@ func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 	ui.Printf("Cluster %s created in %s\n\n", input.ClusterName, time.Now().Sub(timer).String())
 }
 
-func getOrCreateNetworkStack(ui *cli.Ui, clusterName string) ecscli.NetworkOutputs {
+func getOrCreateNetworkStack(ui *Ui, clusterName string) ecscli.NetworkOutputs {
 	outputs, err := ecscli.FindNetworkStack(cfnSvc, clusterName)
 
 	if err != nil {

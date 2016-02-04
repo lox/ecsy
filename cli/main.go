@@ -51,7 +51,7 @@ func main() {
 
 		// deploy command
 		deploy            = kingpin.Command("deploy", "Deploy updated task definitions to ECS")
-		deployPojectName  = deploy.Flag("project-name", "The name of the project").Short('p').Default(currentDirName()).String()
+		deployProjectName = deploy.Flag("project-name", "The name of the project").Short('p').Default(currentDirName()).String()
 		deployComposeFile = deploy.Flag("file", "The docker-compose file to use").Short('f').Default("docker-compose.yml").String()
 		deployCluster     = deploy.Flag("cluster", "The ECS cluster to use").Short('c').Default("default").String()
 		deployHealthcheck = deploy.Flag("healthcheck", "Path to the healthcheck route").Default("/").String()
@@ -64,7 +64,7 @@ func main() {
 
 	kingpin.Version(Version)
 	kingpin.CommandLine.Help =
-		`Create ECS Cluster, Tasks and Services`
+		`An unofficial set of commands for bootstrapping and working with ECS`
 
 	ui := DefaultUi
 	cmd := kingpin.Parse()
