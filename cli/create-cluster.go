@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/99designs/ecs-cli"
-	"github.com/99designs/ecs-cli/cli"
 	"github.com/99designs/ecs-cli/templates"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -29,7 +28,7 @@ type CreateClusterCommandInput struct {
 	Parameters  EcsClusterParameters
 }
 
-func CreateClusterCommand(ui *cli.Ui, input CreateClusterCommandInput) {
+func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 	ui.Printf("Creating cluster %s", input.ClusterName)
 
 	_, err := ecsSvc.CreateCluster(&ecs.CreateClusterInput{
@@ -70,7 +69,7 @@ func CreateClusterCommand(ui *cli.Ui, input CreateClusterCommandInput) {
 	ui.Printf("Cluster %s created in %s\n\n", input.ClusterName, time.Now().Sub(timer).String())
 }
 
-func getOrCreateNetworkStack(ui *cli.Ui, clusterName string) ecscli.NetworkOutputs {
+func getOrCreateNetworkStack(ui *Ui, clusterName string) ecscli.NetworkOutputs {
 	outputs, err := ecscli.FindNetworkStack(cfnSvc, clusterName)
 
 	if err != nil {

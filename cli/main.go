@@ -1,12 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/99designs/ecs-cli/cli"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ecs"
@@ -44,11 +45,17 @@ func main() {
 		createSvcFile        = createSvc.Flag("file", "The path to the docker-compose.yml file").Short('f').Default("docker-compose.yml").String()
 		createSvcHealthcheck = createSvc.Flag("healthcheck", "Path to the healthcheck route").Default("/").String()
 
-		update = kingpin.Command("update-cluster", "Updates an existing ECS cluster")
-		// updateName    = update.Arg("name", "The name of the ECS stack to create").Required().String()
-		// updateKeyName = update.Flag("keyname", "The EC2 keypair to use for instance").Default("default").String()
+		// poll command
 		poll      = kingpin.Command("poll", "Poll a cloudformation stack")
 		pollStack = poll.Arg("stack", "The name of the cloudformation stack to poll").String()
+
+		// deploy command
+		deploy            = kingpin.Command("deploy", "Deploy updated task definitions to ECS")
+		deployProjectName = deploy.Flag("project-name", "The name of the project").Short('p').Default(currentDirName()).String()
+		deployComposeFile = deploy.Flag("file", "The docker-compose file to use").Short('f').Default("docker-compose.yml").String()
+		deployCluster     = deploy.Flag("cluster", "The ECS cluster to use").Short('c').Default("default").String()
+		deployHealthcheck = deploy.Flag("healthcheck", "Path to the healthcheck route").Default("/").String()
+		deployImageTags   = deploy.Arg("imagetags", "Tags in the form image=tag to apply to the task").String()
 	)
 
 	session := session.New(nil)
@@ -57,13 +64,18 @@ func main() {
 
 	kingpin.Version(Version)
 	kingpin.CommandLine.Help =
-		`Create ECS Cluster, Tasks and Services`
+		`An unofficial set of commands for bootstrapping and working with ECS`
 
-	ui := cli.DefaultUi
+	ui := DefaultUi
 	cmd := kingpin.Parse()
 
 	if *debug == false {
 		log.SetOutput(ioutil.Discard)
+	}
+
+	deployImageMap, err := parseImageMap(*deployImageTags)
+	if err != nil {
+		ui.Fatal(err)
 	}
 
 	switch cmd {
@@ -91,20 +103,40 @@ func main() {
 			HealthCheckUrl: *createSvcHealthcheck,
 		})
 
-	case update.FullCommand():
-		UpdateClusterCommand(ui, UpdateClusterCommandInput{
-		// Name:      *updateName,
-		// Templates: templates.Templates{core.FS(false)},
-		// Parameters: EcsClusterParameters{
-		// 	KeyName: *updateKeyName,
-		// },
-		})
-
 	case poll.FullCommand():
 		PollCommand(ui, PollCommandInput{
 			StackName: *pollStack,
 		})
+
+	case deploy.FullCommand():
+		DeployCommand(ui, DeployCommandInput{
+			ClusterName:     *deployCluster,
+			ProjectName:     *deployProjectName,
+			ComposeFile:     *deployComposeFile,
+			HealthCheckUrl:  *deployHealthcheck,
+			ContainerImages: deployImageMap,
+		})
 	}
+}
+
+func parseImageMap(s string) (map[string]string, error) {
+	m := map[string]string{}
+
+	if s == "" {
+		return m, nil
+	}
+
+	for _, token := range strings.Split(s, ",") {
+		pieces := strings.SplitN(token, "=", 2)
+		if len(pieces) != 2 {
+			return nil, fmt.Errorf("Failed to parse image tag %q", s)
+		}
+		m[pieces[0]] = pieces[1]
+	}
+
+	log.Printf("Parsed %s to %#v", s, m)
+	return m, nil
+
 }
 
 func currentDirName() string {

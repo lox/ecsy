@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/99designs/ecs-cli"
-	"github.com/99designs/ecs-cli/cli"
 	"github.com/99designs/ecs-cli/compose"
 	"github.com/99designs/ecs-cli/templates"
 	"github.com/aws/aws-sdk-go/aws"
@@ -21,7 +20,7 @@ type CreateServiceCommandInput struct {
 	HealthCheckUrl string
 }
 
-func CreateServiceCommand(ui *cli.Ui, input CreateServiceCommandInput) {
+func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
 	stack, _ := ecscli.FindServiceStack(cfnSvc, input.ClusterName, input.ProjectName)
 	if stack != nil {
 		ui.Fatalf("A service already exists for %q in cluster %q. Use `ecs-deploy` or `ecs-up update-service`",
