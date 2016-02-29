@@ -1,0 +1,158 @@
+hash: 2e4b2f605f97ba527f5c48fe1093f32e7054dc3c48d1d0dbb40fe227a762ed96
+updated: 2016-02-29T11:18:19.246975934+11:00
+imports:
+- name: github.com/99designs/libcompose
+  version: 06a43c846413e80629bf5c00b5dfd27f7c0785c1
+  subpackages:
+  - docker
+  - project
+- name: github.com/alecthomas/template
+  version: 14fd436dd20c3cc65242a9f396b61bfc8a3926fc
+  subpackages:
+  - parse
+- name: github.com/alecthomas/units
+  version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
+- name: github.com/aws/aws-sdk-go
+  version: f22f230de2ce5d5bd15c415fb72d30a77931ac56
+  subpackages:
+  - aws
+  - service/cloudformation
+  - service/ecs
+  - aws/session
+  - aws/awserr
+  - aws/credentials
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/request
+  - private/protocol/query
+  - private/signer/v4
+  - private/waiter
+  - private/protocol/jsonrpc
+  - aws/corehandlers
+  - aws/defaults
+  - private/endpoints
+  - private/protocol/query/queryutil
+  - private/protocol/xml/xmlutil
+  - private/protocol/rest
+  - private/protocol/json/jsonutil
+  - aws/credentials/ec2rolecreds
+  - aws/ec2metadata
+- name: github.com/Azure/go-ansiterm
+  version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
+  subpackages:
+  - winterm
+- name: github.com/cloudfoundry-incubator/candiedyaml
+  version: 4e924c79e32959414e8c7aaed6607176d8ee79c3
+- name: github.com/docker/distribution
+  version: a5bd3e61441873ba6cb40480bda58176733fedb9
+  subpackages:
+  - digest
+  - reference
+  - registry/api/errcode
+  - registry/api/v2
+  - registry/client/transport
+- name: github.com/docker/docker
+  version: 0f5c9d301b9b1cca66b3ea0f9dec3b5317d3686d
+  subpackages:
+  - builder
+  - builder/dockerignore
+  - cliconfig
+  - pkg/archive
+  - pkg/fileutils
+  - pkg/homedir
+  - pkg/jsonmessage
+  - pkg/progress
+  - pkg/stdcopy
+  - pkg/streamformatter
+  - pkg/term
+  - reference
+  - registry
+  - runconfig/opts
+  - pkg/chrootarchive
+  - pkg/gitutils
+  - pkg/httputils
+  - pkg/ioutils
+  - pkg/longpath
+  - pkg/symlink
+  - pkg/tarsum
+  - pkg/urlutil
+  - pkg/idtools
+  - pkg/pools
+  - pkg/promise
+  - pkg/system
+  - pkg/jsonlog
+  - pkg/term/windows
+  - image
+  - image/v1
+  - opts
+  - pkg/mflag
+  - pkg/stringid
+  - pkg/mount
+  - pkg/signal
+  - pkg/reexec
+  - layer
+  - pkg/parsers
+  - pkg/ulimit
+  - volume
+- name: github.com/docker/engine-api
+  version: 70d266e96080e3c3d63c55a4d8659e00ac1f7e6c
+  subpackages:
+  - types/container
+  - client
+  - types
+  - types/filters
+  - types/network
+  - types/strslice
+  - types/blkiodev
+  - types/registry
+  - client/transport
+  - client/transport/cancellable
+  - types/time
+- name: github.com/docker/go-connections
+  version: 34b5052da6b11e27f5f2e357b38b571ddddd3928
+  subpackages:
+  - nat
+  - sockets
+  - tlsconfig
+- name: github.com/docker/go-units
+  version: 5d2041e26a699eaca682e2ea41c8f891e1060444
+- name: github.com/docker/libcompose
+  version: 3ca15215f36154fbf64f15bfa305bfb0cebb6ca7
+  subpackages:
+  - docker
+  - project
+  - logger
+  - utils
+  - lookup
+  - version
+- name: github.com/flynn/go-shlex
+  version: 3f9db97f856818214da2e1057f8ad84803971cff
+- name: github.com/go-ini/ini
+  version: 776aa739ce9373377cd16f526cdf06cb4c89b40f
+- name: github.com/gorilla/context
+  version: 14f550f51af52180c2eefed15e5fd18d63c0a64a
+- name: github.com/gorilla/mux
+  version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
+- name: github.com/jmespath/go-jmespath
+  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
+- name: github.com/Microsoft/go-winio
+  version: c40bf24f405ab3cc8e1383542d474e813332de6d
+- name: github.com/opencontainers/runc
+  version: d282265f72feb2fd4196173ca141271613576d35
+  subpackages:
+  - libcontainer/user
+- name: github.com/Sirupsen/logrus
+  version: 219c8cb75c258c552e999735be6df753ffc7afdc
+- name: golang.org/x/net
+  version: 6acef71eb69611914f7a30939ea9f6e194c78172
+  subpackages:
+  - context
+  - proxy
+- name: golang.org/x/sys
+  version: 7e44b69d78df692ea16df94fd8dfcb01843d7f19
+  subpackages:
+  - unix
+- name: gopkg.in/alecthomas/kingpin.v2
+  version: 8cccfa8eb2e3183254457fb1749b2667fbc364c7
+devImports: []
