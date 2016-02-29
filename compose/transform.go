@@ -21,8 +21,8 @@ func TransformComposeFile(composeFile string, projectName string) (*ecs.Register
 
 	project, err := docker.NewProject(&docker.Context{
 		Context: project.Context{
-			ComposeFile: composeFile,
-			ProjectName: projectName,
+			ComposeFiles: []string{composeFile},
+			ProjectName:  projectName,
 		}})
 	if err != nil {
 		return nil, err
