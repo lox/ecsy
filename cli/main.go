@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ecs"
 
-	"gopkg.in/alecthomas/kingpin.v2"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
@@ -37,6 +37,9 @@ func main() {
 		createDatadogKey        = create.Flag("datadog-key", "The datadog api key").String()
 		createLogspoutTarget    = create.Flag("logspout-target", "The endpoint to push logspout output to").String()
 		createAuthorizedKeysUrl = create.Flag("authorized-keys", "A URL to fetch a SSH authorized_keys file from.").String()
+
+		deleteCluster     = kingpin.Command("delete-cluster", "Remove a cluster and all running services on it")
+		deleteClusterName = deleteCluster.Flag("cluster", "The name of the ECS cluster to create").Required().String()
 
 		// create-service command
 		createSvc            = kingpin.Command("create-service", "Create an ECS service for your app")
@@ -94,6 +97,9 @@ func main() {
 				AuthorizedUsersUrl: *createAuthorizedKeysUrl,
 			},
 		})
+
+	case deleteCluster.FullCommand():
+		DeleteClusterCommand(ui, *deleteClusterName)
 
 	case createSvc.FullCommand():
 		CreateServiceCommand(ui, CreateServiceCommandInput{

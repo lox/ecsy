@@ -2,7 +2,11 @@ PREFIX=github.com/99designs/ecs-cli
 VERSION=$(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
 FLAGS=-X main.Version=$(VERSION)
 
-build: templates
+vendor: glide.lock glide.yaml
+	glide -q install
+	touch vendor
+
+build: templates vendor
 	go build -ldflags="$(FLAGS)" -o ecs-cli github.com/99designs/ecs-cli/cli
 
 install: templates

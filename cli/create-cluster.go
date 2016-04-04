@@ -59,7 +59,7 @@ func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 		ui.Fatal(err)
 	}
 
-	err = ecscli.PollStackEvents(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
+	err = ecscli.PollUntilCreated(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
 		ui.Printf("%s\n", ecscli.FormatStackEvent(event))
 	})
 	if err != nil {
@@ -81,7 +81,7 @@ func getOrCreateNetworkStack(ui *Ui, clusterName string) ecscli.NetworkOutputs {
 			ui.Fatal(err)
 		}
 
-		err = ecscli.PollStackEvents(cfnSvc, outputs.StackName, func(event *cloudformation.StackEvent) {
+		err = ecscli.PollUntilCreated(cfnSvc, outputs.StackName, func(event *cloudformation.StackEvent) {
 			ui.Printf("%s\n", ecscli.FormatStackEvent(event))
 		})
 		if err != nil {

@@ -82,7 +82,7 @@ func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
 		ui.Fatal(err)
 	}
 
-	err = ecscli.PollStackEvents(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
+	err = ecscli.PollUntilCreated(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
 		ui.Printf("%s\n", ecscli.FormatStackEvent(event))
 	})
 	if err != nil {

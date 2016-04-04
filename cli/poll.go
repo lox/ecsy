@@ -10,7 +10,7 @@ type PollCommandInput struct {
 }
 
 func PollCommand(ui *Ui, input PollCommandInput) {
-	err := ecscli.PollStackEvents(cfnSvc, input.StackName, func(event *cloudformation.StackEvent) {
+	err := ecscli.PollUntilCreated(cfnSvc, input.StackName, func(event *cloudformation.StackEvent) {
 		ui.Printf("%s\n", ecscli.FormatStackEvent(event))
 	})
 	if err != nil {

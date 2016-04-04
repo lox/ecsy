@@ -14,18 +14,19 @@ type NetworkOutputs struct {
 }
 
 func FindServiceStack(svc *cloudformation.CloudFormation, clusterName, taskFamily string) (*cloudformation.Stack, error) {
-	serviceStack, err := FindStackByOutputs(svc, map[string]string{
+	serviceStacks, err := FindStacksByOutputs(svc, map[string]string{
 		"StackType":  "ecs-former::ecs-service",
 		"ECSCluster": clusterName,
 		"TaskFamily": taskFamily,
 	})
-	if err != nil {
-		if err == ErrNoStacksFound {
-			return nil, fmt.Errorf(
-				"Failed to find a cloudformation stack for task %q, cluster %q", taskFamily, clusterName)
-		}
+	if len(serviceStacks) == 0 {
+		return nil, fmt.Errorf(
+			"Failed to find a cloudformation stack for task %q, cluster %q",
+			taskFamily,
+			clusterName,
+		)
 	}
-	return serviceStack, err
+	return serviceStacks[0], err
 }
 
 func FindNetworkStack(svc cfnInterface, clusterName string) (NetworkOutputs, error) {
@@ -46,4 +47,17 @@ func FindNetworkStack(svc cfnInterface, clusterName string) (NetworkOutputs, err
 		Subnets:       outputs["Subnets"],
 		SecurityGroup: outputs["SecurityGroup"],
 	}, nil
+}
+
+func FindAllStacksForCluster(svc cfnInterface, clusterName string) ([]*cloudformation.Stack, error) {
+	stacks, err := FindStacksByOutputs(svc, map[string]string{
+		"ECSCluster": clusterName,
+	})
+
+	networkStack, err := FindStacksByName(svc, clusterName+"-network")
+	if err == nil {
+		stacks = append(stacks, networkStack...)
+	}
+
+	return stacks, nil
 }
