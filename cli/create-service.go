@@ -8,9 +8,7 @@ import (
 	"github.com/99designs/ecs-cli"
 	"github.com/99designs/ecs-cli/compose"
 	"github.com/99designs/ecs-cli/templates"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/aws/aws-sdk-go/service/ecs"
 )
 
 type CreateServiceCommandInput struct {
@@ -94,18 +92,11 @@ func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
 		ui.Fatal(err)
 	}
 
-	serviceResp, err := ecsSvc.DescribeServices(&ecs.DescribeServicesInput{
-		Services: []*string{aws.String(stackOutputs["ECSService"])},
-		Cluster:  aws.String(input.ClusterName),
-	})
+	ui.Printf("Waiting for service to reach a steady state.")
+	err = ecscli.PollUntilTaskDeployed(ecsSvc, input.ClusterName, stackOutputs["ECSService"], *resp.TaskDefinition.TaskDefinitionArn, ui.EcsEventPrinter())
 	if err != nil {
 		ui.Fatal(err)
 	}
-
-	ui.Printf("Waiting for service to reach a steady state.")
-	err = ecscli.PollDeployment(ecsSvc, serviceResp.Services[0], input.ClusterName, func(e *ecs.ServiceEvent) {
-		log.Println(*e.Message)
-	})
 
 	log.Printf("Service created in %s", time.Now().Sub(timer).String())
 	ui.Println("Service available at", stackOutputs["ECSLoadBalancer"])

@@ -8,7 +8,10 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"time"
 )
+
+const ECS_POLL_INTERVAL = 1 * time.Second
 
 type ecsInterface interface {
 	DescribeServices(*ecs.DescribeServicesInput) (*ecs.DescribeServicesOutput, error)
@@ -61,57 +64,49 @@ func (d *dockerImageName) String() string {
 	return fmt.Sprintf("%s:%s", d.Image, d.Tag)
 }
 
-func PollDeployment(svc ecsInterface, service *ecs.Service, cluster string, f func(e *ecs.ServiceEvent)) error {
-	if len(service.Deployments) == 0 {
-		return errors.New("Service has no deployments")
+func getService(svc ecsInterface, cluster, service string) (*ecs.Service, error) {
+	resp, err := svc.DescribeServices(&ecs.DescribeServicesInput{
+		Services: []*string{aws.String(service)},
+		Cluster:  aws.String(cluster),
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	deployment := service.Deployments[0]
-	lastSeen := *deployment.CreatedAt
+	if len(resp.Failures) > 0 {
+		return nil, errors.New(*resp.Failures[0].Reason)
+	}
+
+	if len(resp.Services) != 1 {
+		return nil, errors.New("Multiple services with the same name.")
+	}
+
+	return resp.Services[0], nil
+}
+
+func PollUntilTaskDeployed(svc ecsInterface, cluster string, service string, task string, f func(e *ecs.ServiceEvent)) error {
+	lastSeen := time.Now().Add(-1 * time.Minute)
 
 	for {
-		for i := len(service.Events) - 1; i >= 0; i-- {
-			if service.Events[i].CreatedAt.After(lastSeen) {
-				f(service.Events[i])
-				lastSeen = *service.Events[i].CreatedAt
-			}
-		}
-
-		if *deployment.DesiredCount == *deployment.RunningCount &&
-			strings.HasSuffix(*service.Events[0].Message, "reached a steady state.") {
-			break
-		}
-
-		resp, err := svc.DescribeServices(&ecs.DescribeServicesInput{
-			Services: []*string{service.ServiceName},
-			Cluster:  aws.String(cluster),
-		})
+		service, err := getService(svc, cluster, service)
 		if err != nil {
 			return err
 		}
 
-		if len(resp.Failures) > 0 {
-			return errors.New(*resp.Failures[0].Reason)
+		for i := len(service.Events) - 1; i >= 0; i-- {
+			event := service.Events[i]
+			if event.CreatedAt.After(lastSeen) {
+				f(event)
+				lastSeen = *event.CreatedAt
+			}
 		}
 
-		service = resp.Services[0]
-		deployment = deploymentById(*deployment.Id, resp.Services[0].Deployments)
-
-		if deployment == nil {
-			return errors.New("Failed to find deployment " + *deployment.Id)
+		if len(service.Deployments) == 1 && *service.Deployments[0].TaskDefinition == task {
+			return nil
 		}
+
+		time.Sleep(ECS_POLL_INTERVAL)
 	}
-
-	return nil
-}
-
-func deploymentById(id string, deployments []*ecs.Deployment) *ecs.Deployment {
-	for _, d := range deployments {
-		if id == *d.Id {
-			return d
-		}
-	}
-	return nil
 }
 
 func ExposedPorts(taskDef *ecs.TaskDefinition) map[string][]*ecs.PortMapping {

@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"github.com/aws/aws-sdk-go/service/ecs"
 )
 
 var DefaultUi *Ui
@@ -22,6 +23,12 @@ type Ui struct {
 
 func (ui *Ui) DebugWriter() io.Writer {
 	return &logWriter{ui.Debug}
+}
+
+func (ui *Ui) EcsEventPrinter() func(e *ecs.ServiceEvent) {
+	return func(e *ecs.ServiceEvent) {
+		ui.Println(*e.Message)
+	}
 }
 
 func NewUi() *Ui {

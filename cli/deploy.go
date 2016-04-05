@@ -47,7 +47,7 @@ func DeployCommand(ui *Ui, input DeployCommandInput) {
 	timer := time.Now()
 
 	ui.Printf("Updating service %s with new task definition", *serviceStack.StackName)
-	updateResp, err := ecsSvc.UpdateService(&ecs.UpdateServiceInput{
+	_, err = ecsSvc.UpdateService(&ecs.UpdateServiceInput{
 		Service:        aws.String(outputs["ECSService"]),
 		Cluster:        aws.String(outputs["ECSCluster"]),
 		TaskDefinition: aws.String(*resp.TaskDefinition.TaskDefinitionArn),
@@ -57,9 +57,10 @@ func DeployCommand(ui *Ui, input DeployCommandInput) {
 	}
 
 	ui.Printf("Waiting for service to reach a steady state.")
-	err = ecscli.PollDeployment(ecsSvc, updateResp.Service, outputs["ECSCluster"], func(e *ecs.ServiceEvent) {
-		log.Println(*e.Message)
-	})
+	err = ecscli.PollUntilTaskDeployed(ecsSvc,  outputs["ECSCluster"], outputs["ECSService"], *resp.TaskDefinition.TaskDefinitionArn, ui.EcsEventPrinter())
+	if err != nil {
+		ui.Fatal(err)
+	}
 
 	log.Printf("Deployed in %s", time.Now().Sub(timer).String())
 
