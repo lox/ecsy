@@ -20,7 +20,7 @@ type _escStaticFS struct{}
 
 var _escStatic _escStaticFS
 
-type _escDir struct {
+type _escDirectory struct {
 	fs   http.FileSystem
 	name string
 }
@@ -32,8 +32,8 @@ type _escFile struct {
 	local      string
 	isDir      bool
 
-	data []byte
 	once sync.Once
+	data []byte
 	name string
 }
 
@@ -78,7 +78,7 @@ func (fs _escStaticFS) Open(name string) (http.File, error) {
 	return f.File()
 }
 
-func (dir _escDir) Open(name string) (http.File, error) {
+func (dir _escDirectory) Open(name string) (http.File, error) {
 	return dir.fs.Open(dir.name + name)
 }
 
@@ -142,9 +142,9 @@ func FS(useLocal bool) http.FileSystem {
 // If useLocal is true, the filesystem's contents are instead used.
 func Dir(useLocal bool, name string) http.FileSystem {
 	if useLocal {
-		return _escDir{fs: _escLocal, name: name}
+		return _escDirectory{fs: _escLocal, name: name}
 	}
-	return _escDir{fs: _escStatic, name: name}
+	return _escDirectory{fs: _escStatic, name: name}
 }
 
 // FSByte returns the named file from the embedded assets. If useLocal is
@@ -188,38 +188,41 @@ var _escData = map[string]*_escFile{
 
 	"/templates/build/ecs-service.json": {
 		local:   "templates/build/ecs-service.json",
-		size:    5461,
-		modtime: 1449535790,
+		size:    8296,
+		modtime: 1456986937,
 		compressed: `
-H4sIAAAJbogA/6xYXU8bORe+z6+w5rKiEHj1rnbnLiTQZsWyEQn0YsWF4ziMxYw9sj1FdMV/3+P5SGyP
-nQkI2qrBPn7O93Ps/DtCKJn8WK5oUeZY02shC6wfqFRM8CRFycX4fPx1/Af8TU6M7AJLXFANArBrTsPa
-Cqvna1yw/HW3ZlZfS2oQlloy/lSfrtdnVBHJSt0qWGUUbevDiAMyElukYUkDJmIcVYom9cm3k72yGd0y
-zlqEjyhkG8o12zIqO31X0yVyoZEWfe0gNs0rBf5/quYWM6hyKrjGjFN5C+H5oFbSYRgNWGtMMvPJqFdU
-/mQkpnMhpA7pvK2KNcTgkM4SjiITRl+/KCm3T25xlRslv4/dUN9cfpL2XOANWuMcc/I+C6bLJSWVZPr1
-mxRVGTIFeidNr6YXaeqIpul8E7VvAkFvZNGTEUZbIZtSuLmE/7FGGVYIE0KV6tJkV8mcK218UW7SHkpy
-2MKHxfSgXSZuILMzp/MINd47ypbVmlOtQgqnoijwjOasYJpubpjSUY0tinGSSAr8swsD466+7xTnOptm
-lDzfy/yDbXB/d2NUZUyjl4xytBFwAmU1NDHQCm2lKDojQiWSnLV2jVrbkr8rXVZWJMAQTJ5bq3ZWPuC8
-qs2kRH2FABdUpqn5HOw/yPYNFO1lW7MhoG4Blq55mv4JrsDqP7tVWN/Zb37sHdjLtC7TszNHBFmgFvQ3
-qidae+Dtvm/oSV9kdrusmcvbeXR+f3MPJumQYXd0a6LZkYQLNgqp6T69HUHogSB3CvfyMbxlm9Fj8ZZ2
-Bfh44dkax7PkXbxdvd5RJSpp2GNXsRDFjxLdvkcWEmhVakaVa1gt5vd9n/+apjf9x7UZjRAYqwYMuQFz
-pU4hdD4b4tstW5WUOJbO+ZMEQvXq2C2sZF6CG1oQYSgm0aT06jC5Bn7wxlIvpcGa9HBW4jNQpmwj5yZd
-yfi0/nM2tg+8DRd/jGbctOdYaUb2skCbaRps/GgZ9AeG7W23O5zGgQTuo+eW6SgSxMhxf/KHg2rZaMYc
-5c21+IB5dsw+owC6q8AAlnufO4ho1//31Wox7Lo1mv3srrB8on3DYhOr3uvNkMDYMYb5I8L8+P4fGYPa
-t/ehefeRPtzBcfcYK8cW93WVAVdlIjeUd+EI3POsL3I+dmTmHObTT2xy+D93Z8UKKiqTkf8HWw2CxCkx
-ND2TECzo84XIGXn1E3vF8Tqnm5okJYyiiJLfxiM/IMeMS2/mLM3MaYQGaaY/zOvl6PR23YcxxSTdTEXF
-jfnndoNbnTvQ5LEXm2+NK3eY6CMPsijkcKPbDg0Y6s+J6G0rTBB3IvfR+9efWiiYlOiL3wbyhI4uO882
-t/Tmk7/StJYYrLuJUlVRozUNMxMEfud+rszjQNN2wyW2XvCvtltoxdqYPBcvPboDWxiM4hLngdTVY7Nr
-rD6DovohcooL/Etw/KJOiSj6JPborfQ4MpmQNicBklZapfuwDNz/R6EduwoWWGfN+8teNLFucnGgH5uM
-tDWe2I8uf/YdSl0tEU9fX297ZCiNtdCBONb7tLmBmW8y1rsbWHOpXtMvQcz4KUmfzG1F7r5HMJfagWdc
-HO/OR/vBdHYUGrk4wgUQmlQ6E5L9osH7fODcYzDG3cPHpOLLeyd2hOVcdhmZf2+j/wIAAP//T/c9j1UV
-AAA=
+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
 `,
 	},
 
 	"/templates/build/ecs-stack.json": {
 		local:   "templates/build/ecs-stack.json",
 		size:    12230,
-		modtime: 1449468530,
+		modtime: 1456373101,
 		compressed: `
 H4sIAAAJbogA/+xa+W/bOPb/PX8Fv/oupsAitmwnbWYMZBYaN+14p2mN2u2gOy46NEXbRCVSIKkcLfy/
 7yMl2Troo0kvLBq0jky+i4/v+JDRxyOEvODP8YTGSYQ1fSJkjPVrKhUT3Osjr9fpdlqdX+Cfd2xoR1ji
@@ -269,7 +272,7 @@ jR+JuTcxt6SfTb0wbOGFgRgHJGWCume9dvesfQqf/Z+7vYf2w0/DpCCh6MEkeDo+z9/86X+jy4sHJXuC
 	"/templates/build/network-stack.json": {
 		local:   "templates/build/network-stack.json",
 		size:    4166,
-		modtime: 1449109612,
+		modtime: 1456373101,
 		compressed: `
 H4sIAAAJbogA/9SX0W+bPhDH3/NXID/n9yvQtdJ4y9olYpO2KEGZ1GkPDrlmqAQj22yKJv732SQktgMx
 UZO1VVtR7Psed5+zD/On5zho8G0awSpPMYchoSvMZ0BZQjIUOMh3Pfc/9734RX1p+7XgecGZmJJSMTDL

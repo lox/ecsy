@@ -42,11 +42,12 @@ func main() {
 		deleteClusterName = deleteCluster.Flag("cluster", "The name of the ECS cluster to create").Required().String()
 
 		// create-service command
-		createSvc            = kingpin.Command("create-service", "Create an ECS service for your app")
-		createSvcCluster     = createSvc.Flag("cluster", "The ECS cluster to use").Required().String()
-		createSvcProjectName = createSvc.Flag("project-name", "The name of the compose project").Short('p').Default(currentDirName()).String()
-		createSvcFile        = createSvc.Flag("file", "The path to the docker-compose.yml file").Short('f').Default("docker-compose.yml").String()
-		createSvcHealthcheck = createSvc.Flag("healthcheck", "Path to the healthcheck route").Default("/").String()
+		createSvc                 = kingpin.Command("create-service", "Create an ECS service for your app")
+		createSvcCluster          = createSvc.Flag("cluster", "The ECS cluster to use").Required().String()
+		createSvcProjectName      = createSvc.Flag("project-name", "The name of the compose project").Short('p').Default(currentDirName()).String()
+		createSvcFile             = createSvc.Flag("file", "The path to the docker-compose.yml file").Short('f').Default("docker-compose.yml").String()
+		createSvcHealthcheck      = createSvc.Flag("healthcheck", "Path to the healthcheck route").Default("/").String()
+		createSvcSSLCertificateId = createSvc.Flag("ssl-certificate-id", "Name of the SSL certificate to use").String()
 
 		// poll command
 		poll      = kingpin.Command("poll", "Poll a cloudformation stack")
@@ -57,7 +58,6 @@ func main() {
 		deployProjectName = deploy.Flag("project-name", "The name of the project").Short('p').Default(currentDirName()).String()
 		deployComposeFile = deploy.Flag("file", "The docker-compose file to use").Short('f').Default("docker-compose.yml").String()
 		deployCluster     = deploy.Flag("cluster", "The ECS cluster to use").Short('c').Default("default").String()
-		deployHealthcheck = deploy.Flag("healthcheck", "Path to the healthcheck route").Default("/").String()
 		deployImageTags   = deploy.Arg("imagetags", "Tags in the form image=tag to apply to the task").String()
 	)
 
@@ -103,10 +103,11 @@ func main() {
 
 	case createSvc.FullCommand():
 		CreateServiceCommand(ui, CreateServiceCommandInput{
-			ClusterName:    *createSvcCluster,
-			ProjectName:    *createSvcProjectName,
-			ComposeFile:    *createSvcFile,
-			HealthCheckUrl: *createSvcHealthcheck,
+			ClusterName:      *createSvcCluster,
+			ProjectName:      *createSvcProjectName,
+			ComposeFile:      *createSvcFile,
+			HealthCheckUrl:   *createSvcHealthcheck,
+			SSLCertificateId: *createSvcSSLCertificateId,
 		})
 
 	case poll.FullCommand():
@@ -119,7 +120,6 @@ func main() {
 			ClusterName:     *deployCluster,
 			ProjectName:     *deployProjectName,
 			ComposeFile:     *deployComposeFile,
-			HealthCheckUrl:  *deployHealthcheck,
 			ContainerImages: deployImageMap,
 		})
 	}

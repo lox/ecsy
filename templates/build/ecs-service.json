@@ -43,6 +43,33 @@
       "Type": "String",
       "Description": "The URL to hit when doing healthchecks from the ELB",
       "Default": "/"
+    },
+    "SSLCertificateId": {
+      "Type": "String",
+      "Description": "An identifier of an SSL certificate to use for the ELB",
+      "Default": ""
+    }
+  },
+  "Conditions": {
+    "UseHttpListener": {
+      "Fn::Equals": [
+        {
+          "Ref": "SSLCertificateId"
+        },
+        ""
+      ]
+    },
+    "UseHttpsListener": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "SSLCertificateId"
+            },
+            ""
+          ]
+        }
+      ]
     }
   },
   "Outputs": {
@@ -51,21 +78,41 @@
     },
     "ECSLoadBalancer": {
       "Value": {
-        "Fn::Join": [
-          "",
-          [
-            "http://",
-            {
-              "Fn::GetAtt": [
-                "ECSLoadBalancer",
-                "DNSName"
+        "Fn::If": [
+          "UseHttpsListener",
+          {
+            "Fn::Join": [
+              "",
+              [
+                "https://",
+                {
+                  "Fn::GetAtt": [
+                    "HTTPSLoadBalancer",
+                    "DNSName"
+                  ]
+                },
+                ":",
+                {
+                  "Ref": "ELBPort"
+                }
               ]
-            },
-            ":",
-            {
-              "Ref": "ELBPort"
-            }
-          ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "http://",
+                {
+                  "Fn::GetAtt": [
+                    "HTTPLoadBalancer",
+                    "DNSName"
+                  ]
+                },
+                ":443"
+              ]
+            ]
+          }
         ]
       }
     },
@@ -103,12 +150,19 @@
               "Ref": "ELBPort"
             },
             "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0"
           }
         ]
       }
     },
-    "ECSLoadBalancer": {
+    "HTTPLoadBalancer": {
       "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Condition": "UseHttpListener",
       "Properties": {
         "Subnets": {
           "Ref": "Subnets"
@@ -158,6 +212,68 @@
         }
       }
     },
+    "HTTPSLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Condition": "UseHttpsListener",
+      "Properties": {
+        "Subnets": {
+          "Ref": "Subnets"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "ELBSecurityGroup"
+          },
+          {
+            "Ref": "ECSSecurityGroup"
+          }
+        ],
+        "Listeners": [
+          {
+            "LoadBalancerPort": {
+              "Ref": "ELBPort"
+            },
+            "InstancePort": {
+              "Ref": "ContainerPort"
+            },
+            "Protocol": "HTTP"
+          },
+          {
+            "LoadBalancerPort": 443,
+            "InstancePort": {
+              "Ref": "ContainerPort"
+            },
+            "Protocol": "HTTPS",
+            "SSLCertificateId": {
+              "Ref": "SSLCertificateId"
+            }
+          }
+        ],
+        "HealthCheck": {
+          "Target": {
+            "Fn::Join": [
+              "",
+              [
+                "HTTP:",
+                {
+                  "Ref": "ContainerPort"
+                },
+                {
+                  "Ref": "HealthCheckUrl"
+                }
+              ]
+            ]
+          },
+          "HealthyThreshold": 2,
+          "UnhealthyThreshold": 10,
+          "Interval": 30,
+          "Timeout": 5
+        },
+        "ConnectionDrainingPolicy": {
+          "Enabled": "true",
+          "Timeout": 60
+        }
+      }
+    },
     "ECSService": {
       "Type": "AWS::ECS::Service",
       "Properties": {
@@ -174,7 +290,15 @@
               "Ref": "ContainerPort"
             },
             "LoadBalancerName": {
-              "Ref": "ECSLoadBalancer"
+              "Fn::If": [
+                "UseHttpsListener",
+                {
+                  "Ref": "HTTPSLoadBalancer"
+                },
+                {
+                  "Ref": "HTTPLoadBalancer"
+                }
+              ]
             }
           }
         ],

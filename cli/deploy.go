@@ -15,7 +15,6 @@ type DeployCommandInput struct {
 	ProjectName     string
 	ComposeFile     string
 	ContainerImages map[string]string
-	HealthCheckUrl  string
 }
 
 func DeployCommand(ui *Ui, input DeployCommandInput) {

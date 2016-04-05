@@ -43,12 +43,27 @@ Parameters:
     Description: The URL to hit when doing healthchecks from the ELB
     Default: /
 
+  SSLCertificateId:
+    Type: String
+    Description: An identifier of an SSL certificate to use for the ELB
+    Default: ""
+
+Conditions:
+    UseHttpListener:
+      !Equals [ $(SSLCertificateId), "" ]
+    UseHttpsListener:
+      !Not [ !Equals [ $(SSLCertificateId), "" ] ]
+
 Outputs:
   StackType:
     Value: "ecs-former::ecs-service"
 
   ECSLoadBalancer:
-    Value: http://$(ECSLoadBalancer[DNSName]):$(ELBPort)
+    Value: !If [
+        "UseHttpsListener",
+        "https://$(HTTPSLoadBalancer[DNSName]):$(ELBPort)",
+        "http://$(HTTPLoadBalancer[DNSName]):443"
+      ]
 
   ECSCluster:
     Value: $(ECSCluster)
@@ -70,9 +85,14 @@ Resources:
           FromPort: $(ELBPort)
           ToPort: $(ELBPort)
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
 
-  ECSLoadBalancer:
+  HTTPLoadBalancer:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Condition: UseHttpListener
     Properties:
       Subnets: $(Subnets)
       SecurityGroups: [ $(ELBSecurityGroup), $(ECSSecurityGroup) ]
@@ -80,6 +100,30 @@ Resources:
         - LoadBalancerPort: $(ELBPort)
           InstancePort: $(ContainerPort)
           Protocol: HTTP
+      HealthCheck:
+        Target: HTTP:$(ContainerPort)$(HealthCheckUrl)
+        HealthyThreshold: 2
+        UnhealthyThreshold: 10
+        Interval: 30
+        Timeout: 5
+      ConnectionDrainingPolicy:
+        Enabled: true
+        Timeout: 60
+
+  HTTPSLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Condition: UseHttpsListener
+    Properties:
+      Subnets: $(Subnets)
+      SecurityGroups: [ $(ELBSecurityGroup), $(ECSSecurityGroup) ]
+      Listeners:
+        - LoadBalancerPort: $(ELBPort)
+          InstancePort: $(ContainerPort)
+          Protocol: HTTP
+        - LoadBalancerPort: 443
+          InstancePort: $(ContainerPort)
+          Protocol: HTTPS
+          SSLCertificateId: $(SSLCertificateId)
       HealthCheck:
         Target: HTTP:$(ContainerPort)$(HealthCheckUrl)
         HealthyThreshold: 2
@@ -98,7 +142,7 @@ Resources:
       LoadBalancers:
         - ContainerName: $(ContainerName)
           ContainerPort: $(ContainerPort)
-          LoadBalancerName: $(ECSLoadBalancer)
+          LoadBalancerName: !If [ "UseHttpsListener", $(HTTPSLoadBalancer), $(HTTPLoadBalancer) ]
       Role: $(ECSServiceRole)
       TaskDefinition: $(TaskDefinition)
 

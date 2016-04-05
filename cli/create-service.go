@@ -12,10 +12,11 @@ import (
 )
 
 type CreateServiceCommandInput struct {
-	ClusterName    string
-	ProjectName    string
-	ComposeFile    string
-	HealthCheckUrl string
+	ClusterName      string
+	ProjectName      string
+	ComposeFile      string
+	HealthCheckUrl   string
+	SSLCertificateId string
 }
 
 func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
@@ -43,7 +44,7 @@ func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
 		ui.Fatal(err)
 	}
 
-	log.Printf("Found cloudformation stack %s for ECS cluster", network.StackName)
+	log.Printf("Found network stack %s", network.StackName)
 
 	params := map[string]string{
 		"ECSCluster":       input.ClusterName,
@@ -52,6 +53,7 @@ func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
 		"Subnets":          network.Subnets,
 		"Vpc":              network.Vpc,
 		"ECSSecurityGroup": network.SecurityGroup,
+		"SSLCertificateId": input.SSLCertificateId,
 	}
 
 	exposedPorts := ecscli.ExposedPorts(resp.TaskDefinition)
