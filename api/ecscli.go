@@ -1,4 +1,4 @@
-package ecscli
+package api
 
 import (
 	"fmt"

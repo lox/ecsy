@@ -4,10 +4,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/99designs/ecs-cli"
 	"github.com/99designs/ecs-cli/compose"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/99designs/ecs-cli/api"
 )
 
 type DeployCommandInput struct {
@@ -25,7 +25,7 @@ func DeployCommand(ui *Ui, input DeployCommandInput) {
 	}
 
 	ui.Printf("Updating task definition for task %s", *taskDefinitionInput.Family)
-	err = ecscli.UpdateContainerImages(taskDefinitionInput.ContainerDefinitions, input.ContainerImages)
+	err = api.UpdateContainerImages(taskDefinitionInput.ContainerDefinitions, input.ContainerImages)
 	if err != nil {
 		ui.Fatal(err)
 	}
@@ -36,13 +36,13 @@ func DeployCommand(ui *Ui, input DeployCommandInput) {
 	}
 	ui.Printf("Registered task definition %s:%d", *resp.TaskDefinition.Family, *resp.TaskDefinition.Revision)
 
-	serviceStack, err := ecscli.FindServiceStack(cfnSvc, input.ClusterName, input.ProjectName)
+	serviceStack, err := api.FindServiceStack(cfnSvc, input.ClusterName, input.ProjectName)
 	if err != nil {
 		ui.Fatal(err)
 	}
 	log.Printf("Found service stack %s", *serviceStack.StackName)
 
-	outputs := ecscli.StackOutputMap(serviceStack)
+	outputs := api.StackOutputMap(serviceStack)
 	timer := time.Now()
 
 	ui.Printf("Updating service %s with new task definition", *serviceStack.StackName)
@@ -56,7 +56,7 @@ func DeployCommand(ui *Ui, input DeployCommandInput) {
 	}
 
 	ui.Printf("Waiting for service to reach a steady state.")
-	err = ecscli.PollUntilTaskDeployed(ecsSvc,  outputs["ECSCluster"], outputs["ECSService"], *resp.TaskDefinition.TaskDefinitionArn, ui.EcsEventPrinter())
+	err = api.PollUntilTaskDeployed(ecsSvc,  outputs["ECSCluster"], outputs["ECSService"], *resp.TaskDefinition.TaskDefinitionArn, ui.EcsEventPrinter())
 	if err != nil {
 		ui.Fatal(err)
 	}
@@ -66,23 +66,23 @@ func DeployCommand(ui *Ui, input DeployCommandInput) {
 	// serviceOutputs := serviceStack.OutputMap()
 
 	// ui.Printf("Updating service %s with %s", serviceOutputs["ECSService"], taskDef.String())
-	// err = ecsClient.UpdateService(serviceOutputs["ECSCluster"], serviceOutputs["ECSService"], taskDef.Arn)
+	// err = apient.UpdateService(serviceOutputs["ECSCluster"], serviceOutputs["ECSService"], taskDef.Arn)
 	// if err != nil {
 	// 	ui.Fatal(err)
 	// }
 
 	// log.Printf("%#v", resp)
 
-	// ecscli.CloudFormation.
+	// api.CloudFormation.
 
-	// taskDef, err := ecscli.UpdateComposeTaskDefinition(input.ComposeFile, input.ProjectName, input.ContainerImages)
+	// taskDef, err := api.UpdateComposeTaskDefinition(input.ComposeFile, input.ProjectName, input.ContainerImages)
 	// if err != nil {
 	// 	ui.Fatal(err)
 	// }
 
 	// log.Printf("%#v", taskDef)
 
-	// taskDef, err := ecsClient.UpdateComposerTaskDefinition(input.ComposeFile, input.ProjectName, input.ImageTags)
+	// taskDef, err := apient.UpdateComposerTaskDefinition(input.ComposeFile, input.ProjectName, input.ImageTags)
 	// if err != nil {
 	// 	ui.Fatal(err)
 	// }
@@ -90,13 +90,13 @@ func DeployCommand(ui *Ui, input DeployCommandInput) {
 	// serviceOutputs := serviceStack.OutputMap()
 
 	// ui.Printf("Updating service %s with %s", serviceOutputs["ECSService"], taskDef.String())
-	// err = ecsClient.UpdateService(serviceOutputs["ECSCluster"], serviceOutputs["ECSService"], taskDef.Arn)
+	// err = apient.UpdateService(serviceOutputs["ECSCluster"], serviceOutputs["ECSService"], taskDef.Arn)
 	// if err != nil {
 	// 	ui.Fatal(err)
 	// }
 
 	// ui.Printf("Waiting for service to stabilize")
-	// if err = ecsClient.WaitUntilServicesStable(input.ClusterName, serviceOutputs["ECSService"]); err != nil {
+	// if err = apient.WaitUntilServicesStable(input.ClusterName, serviceOutputs["ECSService"]); err != nil {
 	// 	ui.Fatal(err)
 	// }
 

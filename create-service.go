@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/99designs/ecs-cli"
 	"github.com/99designs/ecs-cli/compose"
 	"github.com/99designs/ecs-cli/templates"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/99designs/ecs-cli/api"
 )
 
 type CreateServiceCommandInput struct {
@@ -20,7 +20,7 @@ type CreateServiceCommandInput struct {
 }
 
 func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
-	stack, _ := ecscli.FindServiceStack(cfnSvc, input.ClusterName, input.ProjectName)
+	stack, _ := api.FindServiceStack(cfnSvc, input.ClusterName, input.ProjectName)
 	if stack != nil {
 		ui.Fatalf("A service already exists for %q in cluster %q. Use `ecs-deploy` or `ecs-up update-service`",
 			input.ProjectName, input.ClusterName)
@@ -39,7 +39,7 @@ func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
 	}
 	ui.Printf("Registered task definition %s:%d", *resp.TaskDefinition.Family, *resp.TaskDefinition.Revision)
 
-	network, err := ecscli.FindNetworkStack(cfnSvc, input.ClusterName)
+	network, err := api.FindNetworkStack(cfnSvc, input.ClusterName)
 	if err != nil {
 		ui.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
 		"SSLCertificateId": input.SSLCertificateId,
 	}
 
-	exposedPorts := ecscli.ExposedPorts(resp.TaskDefinition)
+	exposedPorts := api.ExposedPorts(resp.TaskDefinition)
 
 	if len(exposedPorts) != 1 {
 		ui.Fatalf("Task definition without exactly 1 host mapped port are not yet supported")
@@ -77,25 +77,25 @@ func CreateServiceCommand(ui *Ui, input CreateServiceCommandInput) {
 
 	ui.Printf("Creating service cloudformation stack %s", stackName)
 
-	err = ecscli.CreateStack(cfnSvc, stackName, templates.EcsService(), params)
+	err = api.CreateStack(cfnSvc, stackName, templates.EcsService(), params)
 	if err != nil {
 		ui.Fatal(err)
 	}
 
-	err = ecscli.PollUntilCreated(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
-		ui.Printf("%s\n", ecscli.FormatStackEvent(event))
+	err = api.PollUntilCreated(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
+		ui.Printf("%s\n", api.FormatStackEvent(event))
 	})
 	if err != nil {
 		ui.Fatal(err)
 	}
 
-	stackOutputs, err := ecscli.StackOutputs(cfnSvc, stackName)
+	stackOutputs, err := api.StackOutputs(cfnSvc, stackName)
 	if err != nil {
 		ui.Fatal(err)
 	}
 
 	ui.Printf("Waiting for service to reach a steady state.")
-	err = ecscli.PollUntilTaskDeployed(ecsSvc, input.ClusterName, stackOutputs["ECSService"], *resp.TaskDefinition.TaskDefinitionArn, ui.EcsEventPrinter())
+	err = api.PollUntilTaskDeployed(ecsSvc, input.ClusterName, stackOutputs["ECSService"], *resp.TaskDefinition.TaskDefinitionArn, ui.EcsEventPrinter())
 	if err != nil {
 		ui.Fatal(err)
 	}

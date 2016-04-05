@@ -4,11 +4,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/99designs/ecs-cli"
 	"github.com/99designs/ecs-cli/templates"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/99designs/ecs-cli/api"
 )
 
 type EcsClusterParameters struct {
@@ -41,7 +41,7 @@ func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 	stackName := input.ClusterName + "-ecs-" + time.Now().Format("20060102-150405")
 	ui.Printf("Creating cloudformation stack %s", stackName)
 
-	err = ecscli.CreateStack(cfnSvc, stackName, templates.EcsStack(), map[string]string{
+	err = api.CreateStack(cfnSvc, stackName, templates.EcsStack(), map[string]string{
 		"Subnets":            network.Subnets,
 		"SecurityGroup":      network.SecurityGroup,
 		"KeyName":            input.Parameters.KeyName,
@@ -59,8 +59,8 @@ func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 		ui.Fatal(err)
 	}
 
-	err = ecscli.PollUntilCreated(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
-		ui.Printf("%s\n", ecscli.FormatStackEvent(event))
+	err = api.PollUntilCreated(cfnSvc, stackName, func(event *cloudformation.StackEvent) {
+		ui.Printf("%s\n", api.FormatStackEvent(event))
 	})
 	if err != nil {
 		ui.Fatal(err)
@@ -69,26 +69,26 @@ func CreateClusterCommand(ui *Ui, input CreateClusterCommandInput) {
 	ui.Printf("Cluster %s created in %s\n\n", input.ClusterName, time.Now().Sub(timer).String())
 }
 
-func getOrCreateNetworkStack(ui *Ui, clusterName string) ecscli.NetworkOutputs {
-	outputs, err := ecscli.FindNetworkStack(cfnSvc, clusterName)
+func getOrCreateNetworkStack(ui *Ui, clusterName string) api.NetworkOutputs {
+	outputs, err := api.FindNetworkStack(cfnSvc, clusterName)
 
 	if err != nil {
 		timer := time.Now()
 		ui.Printf("Creating Network Stack for %s", clusterName)
 
-		err = ecscli.CreateStack(cfnSvc, outputs.StackName, templates.NetworkStack(), map[string]string{})
+		err = api.CreateStack(cfnSvc, outputs.StackName, templates.NetworkStack(), map[string]string{})
 		if err != nil {
 			ui.Fatal(err)
 		}
 
-		err = ecscli.PollUntilCreated(cfnSvc, outputs.StackName, func(event *cloudformation.StackEvent) {
-			ui.Printf("%s\n", ecscli.FormatStackEvent(event))
+		err = api.PollUntilCreated(cfnSvc, outputs.StackName, func(event *cloudformation.StackEvent) {
+			ui.Printf("%s\n", api.FormatStackEvent(event))
 		})
 		if err != nil {
 			ui.Fatal(err)
 		}
 
-		outputs, err = ecscli.FindNetworkStack(cfnSvc, clusterName)
+		outputs, err = api.FindNetworkStack(cfnSvc, clusterName)
 		if err != nil {
 			ui.Fatal(err)
 		}

@@ -7,7 +7,7 @@ This collection of tools provides a stop-gap whilst the official AWS ECS CLI too
 
 ```
 export GO15VENDOREXPERIMENT=1
-go install -v -o ecs-cli github.com/99designs/ecs-cli/cli
+go get github.com/99designs/ecs-cli
 ```
 
 ## Usage
