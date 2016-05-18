@@ -28,7 +28,9 @@ func TransformComposeFile(composeFile string, projectName string) (*ecs.Register
 		return nil, err
 	}
 
-	for name, config := range project.Configs {
+
+	for _, name := range project.Configs.Keys() {
+		config, _ := project.Configs.Get(name)
 		var def = ecs.ContainerDefinition{
 			Name: aws.String(name),
 		}
