@@ -7,10 +7,10 @@ This collection of tools provides a stop-gap whilst the official AWS ECS CLI too
 
 ```
 brew install glide
-git clone git@github.com:99designs/ecs-cli.git ~/Projects/99designs/go/src/github.com/99designs/ecs-cli
-cd ~/Projects/99designs/go/src/github.com/99designs/ecs-cli
+go get github.com/99designs/ecs-cli
+cd $(echo $GOPATH | cut -d : -f 1)/src/github.com/99designs/ecs-cli
 glide install
-export GO15VENDOREXPERIMENT=1 go install .
+GO15VENDOREXPERIMENT=1 go install .
 ```
 
 ## Usage
