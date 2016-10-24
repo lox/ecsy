@@ -4,15 +4,15 @@ FLAGS=-X main.Version=$(VERSION)
 
 all: build
 
-vendor: glide.lock glide.yaml
-	glide -q install
-	touch vendor
+setup:
+	gem install cfoo
+	go get github.com/mjibson/esc
 
 build: templates vendor
-	go build -ldflags="$(FLAGS)" github.com/99designs/ecs-cli
+	go build -ldflags="$(FLAGS)" $(PREFIX)
 
 install: templates
-	go install -ldflags="$(FLAGS)" github.com/99designs/ecs-cli
+	go install -ldflags="$(FLAGS)" $(PREFIX)
 
 templates: templates/build/ecs-service.json templates/build/ecs-stack.json templates/build/network-stack.json
 	esc -o templates/static.go -pkg templates templates/build
