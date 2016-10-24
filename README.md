@@ -3,6 +3,8 @@ ECSy
 
 A tool for managing and deploying ECS clusters, because the [official one](https://github.com/aws/amazon-ecs-cli) is [terrible](#why-not-amazon-ecs-cli)
 
+Derived from `99designs/ecs-cli`, many thanks to those guys for being awesome and making it possible for me to release it open-source. 
+
 ## Features 
 
  * CloudFormation templates are used to manage the network stack (VPC), ECS services and ECS cluster
@@ -32,7 +34,6 @@ ecsy create-service --cluster example -f docker-compose.yml
 # Creates and deploys a new task with the helloworld container updated with a new image tag
 ecsy deploy --cluster example -f docker-compose.yml helloworld=:v2
 ```
-
 
 ### Why not amazon-ecs-cli?
 
