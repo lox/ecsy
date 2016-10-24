@@ -67,7 +67,7 @@ func main() {
 
 	kingpin.Version(Version)
 	kingpin.CommandLine.Help =
-		`An unofficial set of commands for bootstrapping and working with ECS`
+		`A tool for managing and deploying ECS clusters`
 
 	ui := DefaultUi
 	cmd := kingpin.Parse()

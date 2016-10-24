@@ -4,10 +4,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/99designs/ecs-cli/compose"
+	"github.com/lox/ecsy/compose"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/99designs/ecs-cli/api"
+	"github.com/lox/ecsy/api"
 )
 
 type DeployCommandInput struct {

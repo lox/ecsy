@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/99designs/ecs-cli/compose"
-	"github.com/99designs/ecs-cli/templates"
+	"github.com/lox/ecsy/compose"
+	"github.com/lox/ecsy/templates"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/99designs/ecs-cli/api"
+	"github.com/lox/ecsy/api"
 )
 
 type CreateServiceCommandInput struct {

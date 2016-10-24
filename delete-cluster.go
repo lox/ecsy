@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/99designs/ecs-cli/api"
+	"github.com/lox/ecsy/api"
 )
 
 func DeleteClusterCommand(ui *Ui, clusterName string) {

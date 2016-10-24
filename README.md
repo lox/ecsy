@@ -1,16 +1,17 @@
-ECS CLI Tools
+ECSy
 =============
 
-This collection of tools provides a stop-gap whilst the official AWS ECS CLI tools develop.
+A tool for managing and deploying ECS clusters, because the [official one](https://github.com/aws/amazon-ecs-cli) is [terrible](#why-not-amazon-ecs-cli)
+
+## Features 
+
+ * CloudFormation templates are used to manage the network stack (VPC), ECS services and ECS cluster
+ * Designed for managing many people who manage many different ECS clusters 
 
 ## Installing
 
 ```
-brew install glide
-go get github.com/99designs/ecs-cli
-cd $(echo $GOPATH | cut -d : -f 1)/src/github.com/99designs/ecs-cli
-glide install
-GO15VENDOREXPERIMENT=1 go install .
+go get github.com/lox/ecsy
 ```
 
 ## Usage
@@ -19,26 +20,23 @@ GO15VENDOREXPERIMENT=1 go install .
 
 ```bash
 # create an ecs cluster and supporting infrastructure (vpc, autoscale group, security groups, etc)
-ecs-cli create-cluster --cluster example --keyname lox --type m4.large --count 4
+ecsy create-cluster --cluster example --keyname lox --type m4.large --count 4
 
 # create an ecs task and service from a docker-compose file
-ecs-cli create-service --cluster example -f docker-compose.yml
+ecsy create-service --cluster example -f docker-compose.yml
 ```
 
 ### Deploy a new release of your app to a service created above
 
 ```bash
 # Creates and deploys a new task with the helloworld container updated with a new image tag
-ecs-cli deploy --cluster example -f docker-compose.yml helloworld=:v2
-```
-
-### TODO
-
-```
-ecs-cli update-cluster --cluster <ecs_cluster>
-ecs-cli create-service -f <docker-compose.yml> --cluster <ecs_cluster>
-ecs-cli update-service -f <docker-compose.yml> --cluster <ecs_cluster>
-ecs-cli run-task -f <docker-compose.yml> --cluster <ecs_cluster> <container>
+ecsy deploy --cluster example -f docker-compose.yml helloworld=:v2
 ```
 
 
+### Why not amazon-ecs-cli?
+
+The main issue with `amazon-ecs-cli` is that it tries to emulate the `docker-compose` interface, which isn't a sensible abstraction and ends up making the architecture overly complicated. Contributing the changes we wanted upstream just wasn't viable, and beyond that issues go unanswered and development seems stagnant:
+
+- https://github.com/aws/amazon-ecs-cli/issues/90
+- https://github.com/aws/amazon-ecs-cli/issues/21

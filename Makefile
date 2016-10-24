@@ -1,4 +1,4 @@
-PREFIX=github.com/99designs/ecs-cli
+PREFIX=github.com/lox/ecsy
 VERSION=$(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
 FLAGS=-X main.Version=$(VERSION)
 
