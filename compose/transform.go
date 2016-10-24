@@ -3,12 +3,14 @@ package compose
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/docker/libcompose/docker"
+	"github.com/docker/libcompose/docker/ctx"
 	"github.com/docker/libcompose/project"
 )
 
@@ -19,18 +21,19 @@ func TransformComposeFile(composeFile string, projectName string) (*ecs.Register
 		Volumes:              []*ecs.Volume{},
 	}
 
-	project, err := docker.NewProject(&docker.Context{
+	p, err := docker.NewProject(&ctx.Context{
 		Context: project.Context{
 			ComposeFiles: []string{composeFile},
 			ProjectName:  projectName,
-		}})
+		}}, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	log.Printf("%#v", p)
 
-	for _, name := range project.Configs.Keys() {
-		config, _ := project.Configs.Get(name)
+	for _, name := range p.(*project.Project).ServiceConfigs.Keys() {
+		config, _ := p.GetServiceConfig(name)
 		var def = ecs.ContainerDefinition{
 			Name: aws.String(name),
 		}
@@ -48,44 +51,44 @@ func TransformComposeFile(composeFile string, projectName string) (*ecs.Register
 		}
 
 		if config.CPUShares > 0 {
-			def.Cpu = aws.Int64(config.CPUShares)
+			def.Cpu = aws.Int64(int64(config.CPUShares))
 		}
 
 		if config.MemLimit > 0 {
-			def.Memory = aws.Int64(config.MemLimit)
+			def.Memory = aws.Int64(int64(config.MemLimit))
 		}
 
 		if config.Privileged {
 			def.Privileged = aws.Bool(config.Privileged)
 		}
 
-		if slice := config.DNS.Slice(); len(slice) > 0 {
+		if slice := []string(config.DNS); len(slice) > 0 {
 			for _, dns := range slice {
 				def.DnsServers = append(def.DnsServers, aws.String(dns))
 			}
 		}
 
-		if slice := config.DNSSearch.Slice(); len(slice) > 0 {
+		if slice := []string(config.DNSSearch); len(slice) > 0 {
 			for _, item := range slice {
 				def.DnsSearchDomains = append(def.DnsSearchDomains, aws.String(item))
 			}
 		}
 
-		if cmds := config.Command.Slice(); len(cmds) > 0 {
+		if cmds := []string(config.Command); len(cmds) > 0 {
 			def.Command = []*string{}
 			for _, command := range cmds {
 				def.Command = append(def.Command, aws.String(command))
 			}
 		}
 
-		if cmds := config.Entrypoint.Slice(); len(cmds) > 0 {
+		if cmds := []string(config.Entrypoint); len(cmds) > 0 {
 			def.EntryPoint = []*string{}
 			for _, command := range cmds {
 				def.EntryPoint = append(def.EntryPoint, aws.String(command))
 			}
 		}
 
-		if slice := config.Environment.Slice(); len(slice) > 0 {
+		if slice := []string(config.Environment); len(slice) > 0 {
 			def.Environment = []*ecs.KeyValuePair{}
 			for _, val := range slice {
 				parts := strings.SplitN(val, "=", 2)
@@ -133,32 +136,31 @@ func TransformComposeFile(composeFile string, projectName string) (*ecs.Register
 			}
 		}
 
-		if links := config.Links.Slice(); len(links) > 0 {
+		if links := []string(config.Links); len(links) > 0 {
 			def.Links = []*string{}
 			for _, link := range links {
 				def.Links = append(def.Links, aws.String(link))
 			}
 		}
 
-		if vols := config.Volumes; len(vols) > 0 {
+		if config.Volumes != nil {
 			def.MountPoints = []*ecs.MountPoint{}
-			for idx, vol := range vols {
-				parts := strings.Split(vol, ":")
+			for idx, vol := range config.Volumes.Volumes {
 				volumeName := fmt.Sprintf("%s-vol%d", name, idx)
 
 				volume := ecs.Volume{
 					Host: &ecs.HostVolumeProperties{
-						SourcePath: aws.String(parts[0]),
+						SourcePath: aws.String(vol.Source),
 					},
 					Name: aws.String(volumeName),
 				}
 
 				mount := ecs.MountPoint{
 					SourceVolume:  aws.String(volumeName),
-					ContainerPath: aws.String(parts[1]),
+					ContainerPath: aws.String(vol.Destination),
 				}
 
-				if len(parts) == 3 && parts[2] == "ro" {
+				if vol.AccessMode == "ro" {
 					mount.ReadOnly = aws.Bool(true)
 				}
 
@@ -176,10 +178,10 @@ func TransformComposeFile(composeFile string, projectName string) (*ecs.Register
 			}
 		}
 
-		if config.Build != "" {
+		if config.Build.Context != "" {
 			return nil, errors.New("Build directive not supported")
 		}
-		if config.Dockerfile != "" {
+		if config.Build.Dockerfile != "" {
 			return nil, errors.New("Dockerfile directive not supported")
 		}
 		if config.DomainName != "" {
