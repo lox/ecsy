@@ -13,6 +13,10 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
+const (
+	stackDateFormat = "20060102-150405"
+)
+
 func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 	var cluster, keyName, instanceType, dockerUsername, dockerPassword, dockerEmail, authorizedKeys string
 	var datadogKey, logspoutTarget string
@@ -66,7 +70,7 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 		}
 
 		timer := time.Now()
-		stackName := cluster + "-ecs-" + time.Now().Format("20060102-150405")
+		stackName := cluster + "-ecs-" + time.Now().Format(stackDateFormat)
 		fmt.Printf("Creating cloudformation stack %s", stackName)
 
 		err = api.CreateStack(svc.Cloudformation, stackName, templates.EcsStack(), map[string]string{

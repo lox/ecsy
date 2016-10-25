@@ -7,8 +7,11 @@ Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and 
 
 ## Features 
 
- * CloudFormation templates are used to manage the network stack (VPC), ECS services and ECS cluster
+ * CloudFormation based - Network stack, ECS cluster and ECS services
+ * Support for managing ECS services with ELB loadbalancers
  * Designed for managing many ECS clusters 
+ * Built-in support for common third-party services like Datadog
+ * Derives ECS Task Definitions from docker-compose v2 definitions
 
 ## Installing
 

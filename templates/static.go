@@ -189,7 +189,7 @@ var _escData = map[string]*_escFile{
 	"/templates/build/ecs-service.json": {
 		local:   "templates/build/ecs-service.json",
 		size:    8296,
-		modtime: 1477309556,
+		modtime: 1477397638,
 		compressed: `
 H4sIAAAJbogA/+xZTW/bOBO++1cIOhZp46Z9X+zq5jpJ60U2a8ROeljkwNB0RFQivSTVIl3kv++QlmR+
 SXJSdw+LoC1qk8P5nofD8d+jJEknnxdLUm4KpMg5FyVSN0RIylmaJenJ+O349fhX+Jseado5EqgkCghg
@@ -222,7 +222,7 @@ fifROVjk3G3Ux83AUIfi1YFQzkWXkf73OPonAAD//47tE9FoIAAA
 	"/templates/build/ecs-stack.json": {
 		local:   "templates/build/ecs-stack.json",
 		size:    12854,
-		modtime: 1477368077,
+		modtime: 1477397638,
 		compressed: `
 H4sIAAAJbogA/+waaW8bN/a7fwV3dtEAhaWR5COJAHehOk6rbZwIsZIiWwUpxeFIRGbIAcnxkcD/fR85
 h+agjti5sIjb2NLju/j4Ts583EPIG/15MaVxEmFNnwoZY/2aSsUE94bIG/T6vU7vMfzv7RvcCZY4phoQ
@@ -274,7 +274,7 @@ AAAA//+ogziBNjIAAA==
 	"/templates/build/network-stack.json": {
 		local:   "templates/build/network-stack.json",
 		size:    4166,
-		modtime: 1477309549,
+		modtime: 1477397638,
 		compressed: `
 H4sIAAAJbogA/9SX0W+bPhDH3/NXID/n9yvQtdJ4y9olYpO2KEGZ1GkPDrlmqAQj22yKJv732SQktgMx
 UZO1VVtR7Psed5+zD/On5zho8G0awSpPMYchoSvMZ0BZQjIUOMh3Pfc/9734RX1p+7XgecGZmJJSMTDL

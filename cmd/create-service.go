@@ -103,7 +103,7 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		}
 
 		timer := time.Now()
-		stackName := cluster + "-ecs-service-" + time.Now().Format("20060102-150405")
+		stackName := cluster + "-ecs-service-" + time.Now().Format(stackDateFormat)
 
 		log.Printf("Creating service cloudformation stack %s", stackName)
 
