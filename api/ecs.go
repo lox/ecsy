@@ -6,9 +6,10 @@ import (
 	"log"
 	"strings"
 
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"time"
 )
 
 const ECS_POLL_INTERVAL = 1 * time.Second
@@ -16,6 +17,8 @@ const ECS_POLL_INTERVAL = 1 * time.Second
 type ecsInterface interface {
 	DescribeServices(*ecs.DescribeServicesInput) (*ecs.DescribeServicesOutput, error)
 	CreateCluster(*ecs.CreateClusterInput) (*ecs.CreateClusterOutput, error)
+	RegisterTaskDefinition(*ecs.RegisterTaskDefinitionInput) (*ecs.RegisterTaskDefinitionOutput, error)
+	UpdateService(*ecs.UpdateServiceInput) (*ecs.UpdateServiceOutput, error)
 }
 
 func UpdateContainerImages(defs []*ecs.ContainerDefinition, images map[string]string) error {

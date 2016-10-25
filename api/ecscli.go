@@ -13,7 +13,7 @@ type NetworkOutputs struct {
 	SecurityGroup string
 }
 
-func FindServiceStack(svc *cloudformation.CloudFormation, clusterName, taskFamily string) (*cloudformation.Stack, error) {
+func FindServiceStack(svc cfnInterface, clusterName, taskFamily string) (*cloudformation.Stack, error) {
 	serviceStacks, err := FindStacksByOutputs(svc, map[string]string{
 		"StackType":  "ecs-former::ecs-service",
 		"ECSCluster": clusterName,
