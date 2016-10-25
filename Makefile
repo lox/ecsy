@@ -25,11 +25,14 @@ clean:
 templates/build/ecs-stack.json: templates/src/ecs-stack.yml
 	@mkdir -p templates/build/
 	cfoo $^ > $@
+	test -s $@ || exit "$@ is empty"
 
 templates/build/network-stack.json: templates/src/network-stack.yml
 	@mkdir -p templates/build/
 	cfoo $^ > $@
+	test -s $@ || exit "$@ is empty"
 
 templates/build/ecs-service.json: templates/src/ecs-service.yml
 	@mkdir -p templates/build/
 	cfoo $^ > $@
+	test -s $@ || exit "$@ is empty"
