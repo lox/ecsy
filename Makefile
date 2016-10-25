@@ -8,7 +8,7 @@ setup:
 	gem install cfoo
 	go get github.com/mjibson/esc
 
-build: templates vendor
+build: templates
 	go build -ldflags="$(FLAGS)" $(PREFIX)
 
 install: templates
