@@ -3,34 +3,43 @@ package compose
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/docker/libcompose/config"
 	"github.com/docker/libcompose/docker"
 	"github.com/docker/libcompose/docker/ctx"
 	"github.com/docker/libcompose/project"
 )
 
-func TransformComposeFile(composeFile string, projectName string) (*ecs.RegisterTaskDefinitionInput, error) {
+type Transformer struct {
+	ComposeFiles      []string
+	ProjectName       string
+	EnvironmentLookup config.EnvironmentLookup
+}
+
+func (t *Transformer) Transform() (*ecs.RegisterTaskDefinitionInput, error) {
 	task := ecs.RegisterTaskDefinitionInput{
-		Family:               aws.String(projectName),
+		Family:               aws.String(t.ProjectName),
 		ContainerDefinitions: []*ecs.ContainerDefinition{},
 		Volumes:              []*ecs.Volume{},
 	}
 
-	p, err := docker.NewProject(&ctx.Context{
-		Context: project.Context{
-			ComposeFiles: []string{composeFile},
-			ProjectName:  projectName,
-		}}, nil)
+	projectCtx := project.Context{
+		ComposeFiles: t.ComposeFiles,
+		ProjectName:  t.ProjectName,
+	}
+
+	if t.EnvironmentLookup != nil {
+		projectCtx.EnvironmentLookup = t.EnvironmentLookup
+	}
+
+	p, err := docker.NewProject(&ctx.Context{Context: projectCtx}, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	log.Printf("%#v", p)
 
 	for _, name := range p.(*project.Project).ServiceConfigs.Keys() {
 		config, _ := p.GetServiceConfig(name)
@@ -143,6 +152,13 @@ func TransformComposeFile(composeFile string, projectName string) (*ecs.Register
 			}
 		}
 
+		if dependsOn := []string(config.DependsOn); len(dependsOn) > 0 {
+			def.Links = []*string{}
+			for _, link := range dependsOn {
+				def.Links = append(def.Links, aws.String(link))
+			}
+		}
+
 		if config.Volumes != nil {
 			def.MountPoints = []*ecs.MountPoint{}
 			for idx, vol := range config.Volumes.Volumes {
@@ -178,46 +194,116 @@ func TransformComposeFile(composeFile string, projectName string) (*ecs.Register
 			}
 		}
 
-		if config.Build.Context != "" {
-			return nil, errors.New("Build directive not supported")
+		if config.Logging.Driver != "" {
+			def.LogConfiguration = &ecs.LogConfiguration{
+				LogDriver: aws.String(config.Logging.Driver),
+				Options:   map[string]*string{},
+			}
+			for k, v := range config.Logging.Options {
+				def.LogConfiguration.Options[k] = aws.String(v)
+			}
 		}
-		if config.Build.Dockerfile != "" {
-			return nil, errors.New("Dockerfile directive not supported")
+
+		// TODO: the following directives are ignored / not handled
+		// Networks
+		// Expose
+
+		for _, i := range []struct {
+			Key   string
+			Value []string
+		}{
+			{"CapAdd", config.CapAdd},
+			{"CapDrop", config.CapDrop},
+			{"Devices", config.Devices},
+			{"EnvFile", config.EnvFile},
+			{"SecurityOpt", config.SecurityOpt},
+			{"ExternalLinks", config.ExternalLinks},
+			{"ExtraHosts", config.ExtraHosts},
+			{"Extends", config.Extends},
+			{"GroupAdd", config.GroupAdd},
+			{"DNSOpts", config.DNSOpts},
+			{"Tmpfs", config.Tmpfs},
+		} {
+			if len(i.Value) > 0 {
+				return nil, fmt.Errorf("%s directive not supported", i.Key)
+			}
 		}
-		if config.DomainName != "" {
-			return nil, errors.New("DomainName directive not supported")
+
+		for _, i := range []struct {
+			Key   string
+			Value string
+		}{
+			{"Build.Context", config.Build.Context},
+			{"Build.Dockerfile", config.Build.Dockerfile},
+			{"DomainName", config.DomainName},
+			{"VolumeDriver", config.VolumeDriver},
+			{"CPUSet", config.CPUSet},
+			{"NetworkMode", config.NetworkMode},
+			{"Pid", config.Pid},
+			{"Uts", config.Uts},
+			{"Ipc", config.Ipc},
+			{"Restart", config.Restart},
+			{"User", config.User},
+			{"StopSignal", config.StopSignal},
+			{"MacAddress", config.MacAddress},
+			{"Isolation", config.Isolation},
+			{"NetworkMode", config.NetworkMode},
+			{"CgroupParent", config.CgroupParent},
+		} {
+			if i.Value != "" {
+				return nil, fmt.Errorf("%s directive not supported", i.Key)
+			}
 		}
-		if config.VolumeDriver != "" {
-			return nil, errors.New("VolumeDriver directive not supported")
+
+		for _, i := range []struct {
+			Key   string
+			Value int
+		}{
+			{"CPUShares", int(config.CPUShares)},
+			{"CPUQuota", int(config.CPUQuota)},
+			{"MemSwapLimit", int(config.MemSwapLimit)},
+			{"MemSwappiness", int(config.MemSwappiness)},
+			{"OomScoreAdj", int(config.OomScoreAdj)},
+			{"ShmSize", int(config.ShmSize)},
+		} {
+			if i.Value != 0 {
+				return nil, fmt.Errorf("%s directive not supported", i.Key)
+			}
+		}
+
+		for _, i := range []struct {
+			Key   string
+			Value bool
+		}{
+			{"ReadOnly", config.ReadOnly},
+			{"StdinOpen", config.StdinOpen},
+			{"Tty", config.Tty},
+		} {
+			if i.Value {
+				return nil, fmt.Errorf("%s directive not supported", i.Key)
+			}
+		}
+
+		if config.Labels != nil {
+			return nil, fmt.Errorf("Labels directive not supported")
+		}
+
+		if len(config.Ulimits.Elements) > 0 {
+			return nil, fmt.Errorf("Ulimits directive not supported")
 		}
 
 		task.ContainerDefinitions = append(task.ContainerDefinitions, &def)
-
-		// Not Implemented
-		// CapAdd:[]string(nil),
-		// CapDrop:[]string(nil),
-		// CPUSet:"",
-		// ContainerName:"",
-		// Devices:[]string(nil),
-		// EnvFile:project.Stringorslice{parts:[]string(nil)},
-		// Labels:project.SliceorMap{parts:map[string]string(nil)},
-		// LogDriver:"",
-		// MemSwapLimit:0,
-		// Net:"",
-		// Pid:"",
-		// Uts:"",
-		// Ipc:"",
-		// Restart:"",
-		// ReadOnly:false,
-		// StdinOpen:false,
-		// SecurityOpt:[]string(nil),
-		// Tty:false,
-		// User:"",
-		// Expose:[]string(nil),
-		// ExternalLinks:[]string(nil),
-		// LogOpt:map[string]string(nil),
-		// ExtraHosts:[]string(nil)}
 	}
 
 	return &task, nil
+}
+
+type envMap map[string][]string
+
+func (em envMap) Lookup(key, serviceName string, config *config.ServiceConfig) []string {
+	results := []string{}
+	for _, val := range em[key] {
+		results = append(results, key+"="+val)
+	}
+	return results
 }
