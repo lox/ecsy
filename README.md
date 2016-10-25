@@ -3,12 +3,12 @@ ECSy [![Build Status](https://travis-ci.org/lox/ecsy.svg?branch=master)](https:/
 
 A tool for managing and deploying ECS clusters, because the [official one](https://github.com/aws/amazon-ecs-cli) is [terrible](#why-not-amazon-ecs-cli)
 
-Derived from `99designs/ecs-cli`, many thanks to those guys for being awesome and making it possible for me to release it open-source. 
+Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and making it possible for me to release it open-source. 
 
 ## Features 
 
  * CloudFormation templates are used to manage the network stack (VPC), ECS services and ECS cluster
- * Designed for managing many people who manage many different ECS clusters 
+ * Designed for managing many ECS clusters 
 
 ## Installing
 
