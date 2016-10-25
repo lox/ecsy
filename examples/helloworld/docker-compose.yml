@@ -1,5 +1,8 @@
-sample:
-  image: amazon/amazon-ecs-sample
-  ports:
-    - 80:80
-  mem_limit: 100
+version: '2'
+
+services:
+  sample:
+    image: amazon/amazon-ecs-sample
+    ports:
+      - 80:80
+    mem_limit: 100
