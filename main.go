@@ -31,6 +31,7 @@ func run(args []string, exit func(code int)) {
 	cmd.ConfigurePoll(app, api.DefaultServices)
 	cmd.ConfigureDeploy(app, api.DefaultServices)
 	cmd.ConfigureDumpTaskDefinition(app, api.DefaultServices)
+	cmd.ConfigureLogs(app, api.DefaultServices)
 
 	kingpin.MustParse(app.Parse(args))
 }

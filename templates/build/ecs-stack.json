@@ -117,6 +117,11 @@
       "Value": {
         "Ref": "SecurityGroup"
       }
+    },
+    "LogGroupName": {
+      "Value": {
+        "Ref": "ECSLogGroup"
+      }
     }
   },
   "Mappings": {
@@ -215,6 +220,12 @@
             "Ref": "IAMRole"
           }
         ]
+      }
+    },
+    "ECSLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": 7
       }
     },
     "ECSAutoScalingGroup": {
@@ -397,6 +408,24 @@
             "commands": {
               "fetch-authorized-users": {
                 "command": "/etc/cron.hourly/authorized_keys"
+              },
+              "install-cloudwatch-logs": {
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "#!/bin/bash\ncat <<EOF > /etc/sysconfig/docker\nOPTIONS=\"--log-driver=awslogs --log-opt awslogs-region=",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      " --log-opt awslogs-group=",
+                      {
+                        "Ref": "ECSLogGroup"
+                      },
+                      "\"\nEOF\nservice docker restart\n"
+                    ]
+                  ]
+                }
               },
               "logspout": {
                 "test": {

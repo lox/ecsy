@@ -113,6 +113,10 @@ Outputs:
   SecurityGroup:
     Value: $(SecurityGroup)
 
+  LogGroupName:
+    Value: $(ECSLogGroup)
+
+
 # amzn-ami-2016.03.j-amazon-ecs-optimized
 # See http://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_container_instance.html
 Mappings:
@@ -167,6 +171,11 @@ Resources:
             Resource: "arn:aws:logs:*:*:*"
       Roles:
         - $(IAMRole)
+
+  ECSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 7
 
   ECSAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -237,6 +246,14 @@ Resources:
           commands:
             fetch-authorized-users:
               command: /etc/cron.hourly/authorized_keys
+
+            install-cloudwatch-logs:
+              command: |
+                #!/bin/bash
+                cat <<EOF > /etc/sysconfig/docker
+                OPTIONS="--log-driver=awslogs --log-opt awslogs-region=$(AWS::Region) --log-opt awslogs-group=$(ECSLogGroup)"
+                EOF
+                service docker restart
 
             logspout:
               test: "test -n '$(LogspoutTarget)'"

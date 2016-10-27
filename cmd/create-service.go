@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/lox/ecsy/api"
@@ -17,8 +18,9 @@ import (
 )
 
 func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
-	var cluster, projectName, healthCheck, certificateID string
+	var cluster, projectName, healthCheck, certificateID, logPrefix string
 	var composeFiles []string
+	var disableRollback bool
 
 	cmd := app.Command("create-service", "Create an ECS service for your app")
 	cmd.Flag("cluster", "The name of the ECS cluster to use").
@@ -43,8 +45,20 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		Default("docker-compose.yml").
 		ExistingFilesVar(&composeFiles)
 
+	cmd.Flag("disable-rollback", "Don't rollback created infrastructure if a failure occurs").
+		BoolVar(&disableRollback)
+
+	cmd.Flag("log-prefix", "The prefix to provide to cloudwatch logs for container output, defaults to project name").
+		StringVar(&logPrefix)
+
 	cmd.Action(func(c *kingpin.ParseContext) error {
 		log.Printf("Creating service %s on %s", projectName, cluster)
+
+		clusterStack, err := api.FindClusterStack(svc.Cloudformation, cluster)
+		if clusterStack == nil {
+			return fmt.Errorf("No cluster exists for %q. Use `create-cluster`",
+				cluster)
+		}
 
 		stack, _ := api.FindServiceStack(svc.Cloudformation, cluster, projectName)
 		if stack != nil {
@@ -52,7 +66,7 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 				projectName, cluster)
 		}
 
-		log.Printf("Generating task definition from %#v", composeFiles)
+		log.Printf("Generating task definition from %v", composeFiles)
 		t := compose.Transformer{
 			ComposeFiles: composeFiles,
 			ProjectName:  projectName,
@@ -61,6 +75,27 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		taskDefinitionInput, err := t.Transform()
 		if err != nil {
 			return err
+		}
+
+		if logPrefix == "" {
+			logPrefix = projectName
+		}
+
+		if logGroup, exists := api.GetStackOutputByKey(clusterStack, "LogGroupName"); exists {
+			log.Printf("Setting tasks to use log group %s", logGroup)
+
+			for _, def := range taskDefinitionInput.ContainerDefinitions {
+				if def.LogConfiguration == nil {
+					def.LogConfiguration = &ecs.LogConfiguration{
+						LogDriver: aws.String("awslogs"),
+						Options: map[string]*string{
+							"awslogs-group":         aws.String(logGroup),
+							"awslogs-region":        aws.String(os.Getenv("AWS_REGION")),
+							"awslogs-stream-prefix": aws.String(logPrefix),
+						},
+					}
+				}
+			}
 		}
 
 		log.Printf("Registering a task for %s", projectName)
@@ -76,14 +111,17 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		}
 		log.Printf("Found network stack %s", network.StackName)
 
-		params := map[string]string{
-			"ECSCluster":       cluster,
-			"TaskFamily":       *resp.TaskDefinition.Family,
-			"TaskDefinition":   *resp.TaskDefinition.TaskDefinitionArn,
-			"Subnets":          network.Subnets,
-			"Vpc":              network.Vpc,
-			"ECSSecurityGroup": network.SecurityGroup,
-			"SSLCertificateId": certificateID,
+		ctx := api.CreateStackContext{
+			Params: map[string]string{
+				"ECSCluster":       cluster,
+				"TaskFamily":       *resp.TaskDefinition.Family,
+				"TaskDefinition":   *resp.TaskDefinition.TaskDefinitionArn,
+				"Subnets":          network.Subnets,
+				"Vpc":              network.Vpc,
+				"ECSSecurityGroup": network.SecurityGroup,
+				"SSLCertificateId": certificateID,
+			},
+			DisableRollback: disableRollback,
 		}
 
 		exposedPorts := api.ExposedPorts(resp.TaskDefinition)
@@ -95,10 +133,10 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		// for now this is a single value
 		for container, mappings := range exposedPorts {
 			for _, mapping := range mappings {
-				params["ContainerName"] = container
-				params["ContainerPort"] = strconv.FormatInt(*mapping.ContainerPort, 10)
-				params["HealthCheckUrl"] = healthCheck
-				params["ELBPort"] = strconv.FormatInt(*mapping.HostPort, 10)
+				ctx.Params["ContainerName"] = container
+				ctx.Params["ContainerPort"] = strconv.FormatInt(*mapping.ContainerPort, 10)
+				ctx.Params["HealthCheckUrl"] = healthCheck
+				ctx.Params["ELBPort"] = strconv.FormatInt(*mapping.HostPort, 10)
 			}
 		}
 
@@ -107,7 +145,7 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 
 		log.Printf("Creating service cloudformation stack %s", stackName)
 
-		err = api.CreateStack(svc.Cloudformation, stackName, templates.EcsService(), params)
+		err = api.CreateStack(svc.Cloudformation, stackName, templates.EcsService(), ctx)
 		if err != nil {
 			return err
 		}
@@ -140,7 +178,7 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		// }
 
 		log.Printf("Service created in %s", time.Now().Sub(timer).String())
-		log.Printf("Service available at", stackOutputs["ECSLoadBalancer"])
+		log.Printf("Service available at %s", stackOutputs["ECSLoadBalancer"])
 		return nil
 	})
 }

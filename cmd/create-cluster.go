@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -21,6 +21,7 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 	var cluster, keyName, instanceType, dockerUsername, dockerPassword, dockerEmail, authorizedKeys string
 	var datadogKey, logspoutTarget string
 	var instanceCount int
+	var disableRollback bool
 
 	cmd := app.Command("create-cluster", "Create an ECS cluster")
 	cmd.Flag("cluster", "The name of the ECS cluster to create").
@@ -57,68 +58,81 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 	cmd.Flag("authorized-keys", "A URL to fetch a SSH authorized_keys file from.").
 		StringVar(&authorizedKeys)
 
+	cmd.Flag("disable-rollback", "Don't rollback created infrastructure if a failure occurs").
+		BoolVar(&disableRollback)
+
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		fmt.Printf("Creating cluster %s", cluster)
+		log.Printf("Creating cluster %s", cluster)
 
 		_, err := svc.ECS.CreateCluster(&ecs.CreateClusterInput{
 			ClusterName: aws.String(cluster),
 		})
 
-		network, err := getOrCreateNetworkStack(cluster, svc)
+		network, err := getOrCreateNetworkStack(cluster, disableRollback, svc)
 		if err != nil {
 			return err
 		}
 
 		timer := time.Now()
 		stackName := cluster + "-ecs-" + time.Now().Format(stackDateFormat)
-		fmt.Printf("Creating cloudformation stack %s", stackName)
+		log.Printf("Creating cloudformation stack %s", stackName)
 
-		err = api.CreateStack(svc.Cloudformation, stackName, templates.EcsStack(), map[string]string{
-			"Subnets":            network.Subnets,
-			"SecurityGroup":      network.SecurityGroup,
-			"KeyName":            keyName,
-			"ECSCluster":         cluster,
-			"InstanceType":       instanceType,
-			"DesiredCapacity":    strconv.Itoa(instanceCount),
-			"DockerHubUsername":  dockerUsername,
-			"DockerHubPassword":  dockerPassword,
-			"DockerHubEmail":     dockerEmail,
-			"LogspoutTarget":     logspoutTarget,
-			"DatadogApiKey":      datadogKey,
-			"AuthorizedUsersUrl": authorizedKeys,
-		})
+		ctx := api.CreateStackContext{
+			Params: map[string]string{
+				"Subnets":            network.Subnets,
+				"SecurityGroup":      network.SecurityGroup,
+				"KeyName":            keyName,
+				"ECSCluster":         cluster,
+				"InstanceType":       instanceType,
+				"DesiredCapacity":    strconv.Itoa(instanceCount),
+				"DockerHubUsername":  dockerUsername,
+				"DockerHubPassword":  dockerPassword,
+				"DockerHubEmail":     dockerEmail,
+				"LogspoutTarget":     logspoutTarget,
+				"DatadogApiKey":      datadogKey,
+				"AuthorizedUsersUrl": authorizedKeys,
+			},
+			DisableRollback: disableRollback,
+		}
+
+		err = api.CreateStack(svc.Cloudformation, stackName, templates.EcsStack(), ctx)
 		if err != nil {
 			return err
 		}
 
 		err = api.PollUntilCreated(svc.Cloudformation, stackName, func(event *cloudformation.StackEvent) {
-			fmt.Printf("%s\n", api.FormatStackEvent(event))
+			log.Printf("%s\n", api.FormatStackEvent(event))
 		})
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("Cluster %s created in %s\n\n", cluster, time.Now().Sub(timer).String())
+		log.Printf("Cluster %s created in %s\n\n", cluster, time.Now().Sub(timer).String())
 		return nil
 	})
 }
 
-func getOrCreateNetworkStack(clusterName string, svc api.Services) (api.NetworkOutputs, error) {
+func getOrCreateNetworkStack(clusterName string, disableRollback bool, svc api.Services) (api.NetworkOutputs, error) {
 	outputs, err := api.FindNetworkStack(svc.Cloudformation, clusterName)
 	if err == nil {
 		return outputs, nil
 	}
 
 	timer := time.Now()
-	fmt.Printf("Creating Network Stack for %s", clusterName)
+	log.Printf("Creating Network Stack for %s", clusterName)
 
-	err = api.CreateStack(svc.Cloudformation, outputs.StackName, templates.NetworkStack(), map[string]string{})
+	ctx := api.CreateStackContext{
+		Params:          map[string]string{},
+		DisableRollback: disableRollback,
+	}
+
+	err = api.CreateStack(svc.Cloudformation, outputs.StackName, templates.NetworkStack(), ctx)
 	if err != nil {
 		return api.NetworkOutputs{}, err
 	}
 
 	err = api.PollUntilCreated(svc.Cloudformation, outputs.StackName, func(event *cloudformation.StackEvent) {
-		fmt.Printf("%s\n", api.FormatStackEvent(event))
+		log.Printf("%s\n", api.FormatStackEvent(event))
 	})
 	if err != nil {
 		return api.NetworkOutputs{}, err
@@ -129,6 +143,6 @@ func getOrCreateNetworkStack(clusterName string, svc api.Services) (api.NetworkO
 		return api.NetworkOutputs{}, err
 	}
 
-	fmt.Printf("%s created in %s\n\n", outputs.StackName, time.Now().Sub(timer).String())
+	log.Printf("%s created in %s\n\n", outputs.StackName, time.Now().Sub(timer).String())
 	return outputs, nil
 }
