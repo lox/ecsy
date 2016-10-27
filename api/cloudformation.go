@@ -45,6 +45,15 @@ func (o stackOutputMap) Contains(match map[string]string) bool {
 	return true
 }
 
+func GetStackOutputByKey(stack *cloudformation.Stack, key string) (string, bool) {
+	for _, output := range stack.Outputs {
+		if *output.OutputKey == key {
+			return *output.OutputValue, true
+		}
+	}
+	return "", false
+}
+
 var ErrNoStacksFound = errors.New("No matching stacks found")
 
 func FindStacksByOutputs(svc cfnInterface, match map[string]string) ([]*cloudformation.Stack, error) {
@@ -90,9 +99,14 @@ func FindStacksByName(svc cfnInterface, stackName string) (stacks []*cloudformat
 	return
 }
 
-func CreateStack(svc cfnInterface, name string, body string, params map[string]string) error {
+type CreateStackContext struct {
+	Params          map[string]string
+	DisableRollback bool
+}
+
+func CreateStack(svc cfnInterface, name string, body string, ctx CreateStackContext) error {
 	paramsSlice := []*cloudformation.Parameter{}
-	for k, v := range params {
+	for k, v := range ctx.Params {
 		paramsSlice = append(paramsSlice, &cloudformation.Parameter{
 			ParameterKey:   aws.String(k),
 			ParameterValue: aws.String(v),
@@ -104,7 +118,7 @@ func CreateStack(svc cfnInterface, name string, body string, params map[string]s
 		Capabilities: []*string{
 			aws.String("CAPABILITY_IAM"),
 		},
-		DisableRollback: aws.Bool(false),
+		DisableRollback: aws.Bool(ctx.DisableRollback),
 		Parameters:      paramsSlice,
 		TemplateBody:    aws.String(body),
 	})

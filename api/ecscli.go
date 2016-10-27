@@ -13,6 +13,20 @@ type NetworkOutputs struct {
 	SecurityGroup string
 }
 
+func FindClusterStack(svc cfnInterface, clusterName string) (*cloudformation.Stack, error) {
+	clusterStacks, err := FindStacksByOutputs(svc, map[string]string{
+		"StackType":  "ecs-former::ecs-stack",
+		"ECSCluster": clusterName,
+	})
+	if len(clusterStacks) == 0 {
+		return nil, fmt.Errorf(
+			"Failed to find a cloudformation stack for cluster %q",
+			clusterName,
+		)
+	}
+	return clusterStacks[0], err
+}
+
 func FindServiceStack(svc cfnInterface, clusterName, taskFamily string) (*cloudformation.Stack, error) {
 	serviceStacks, err := FindStacksByOutputs(svc, map[string]string{
 		"StackType":  "ecs-former::ecs-service",
