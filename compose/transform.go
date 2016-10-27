@@ -63,8 +63,9 @@ func (t *Transformer) Transform() (*ecs.RegisterTaskDefinitionInput, error) {
 			def.Cpu = aws.Int64(int64(config.CPUShares))
 		}
 
+		// docker-compose expresses it's limit in bytes, ECS in mb
 		if config.MemLimit > 0 {
-			def.Memory = aws.Int64(int64(config.MemLimit))
+			def.Memory = aws.Int64(int64(config.MemLimit / 1024 / 1024))
 		}
 
 		if config.Privileged {
