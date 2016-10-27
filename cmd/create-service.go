@@ -77,8 +77,8 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
-		if logPrefix == nil {
-			logPrefix = &projectName
+		if logPrefix == "" {
+			logPrefix = projectName
 		}
 
 		if logGroup, exists := api.GetStackOutputByKey(clusterStack, "LogGroupName"); exists {
@@ -91,7 +91,7 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 						Options: map[string]*string{
 							"awslogs-group":         aws.String(logGroup),
 							"awslogs-region":        aws.String(os.Getenv("AWS_REGION")),
-							"awslogs-stream-prefix": logPrefix,
+							"awslogs-stream-prefix": aws.String(logPrefix),
 						},
 					}
 				}
