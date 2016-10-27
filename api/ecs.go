@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"time"
@@ -30,8 +29,6 @@ func UpdateContainerImages(defs []*ecs.ContainerDefinition, images map[string]st
 
 				wanted := parseDockerImageName(image)
 				current := parseDockerImageName(*containerDef.Image)
-
-				log.Println(wanted, current)
 
 				if wanted.Image != "" {
 					defs[idx].Image = aws.String(wanted.String())
