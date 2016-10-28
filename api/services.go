@@ -1,6 +1,8 @@
 package api
 
 import (
+	"log"
+
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
@@ -16,8 +18,14 @@ type Services struct {
 }
 
 func init() {
-	session := session.New(nil)
-	DefaultServices.Cloudformation = cloudformation.New(session)
-	DefaultServices.ECS = ecs.New(session)
-	DefaultServices.Logs = cloudwatchlogs.New(session)
+	sess, err := session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	DefaultServices.Cloudformation = cloudformation.New(sess)
+	DefaultServices.ECS = ecs.New(sess)
+	DefaultServices.Logs = cloudwatchlogs.New(sess)
 }
