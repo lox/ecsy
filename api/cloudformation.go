@@ -3,10 +3,12 @@ package api
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/fatih/color"
 )
 
 type cfnInterface interface {
@@ -217,11 +219,16 @@ func isCreateUpdateComplete(stackName string, ev *cloudformation.StackEvent) (bo
 	if *ev.LogicalResourceId == stackName {
 		switch *ev.ResourceStatus {
 		case cloudformation.ResourceStatusUpdateComplete,
-			cloudformation.ResourceStatusCreateComplete:
-			return true, nil
-		case cloudformation.ResourceStatusUpdateFailed,
-			cloudformation.ResourceStatusCreateFailed:
-			return true, errors.New(*ev.ResourceStatusReason)
+			cloudformation.ResourceStatusCreateComplete,
+			cloudformation.ResourceStatusUpdateFailed,
+			cloudformation.ResourceStatusCreateFailed,
+			cloudformation.StackStatusRollbackComplete,
+			cloudformation.StackStatusRollbackFailed:
+			var err error
+			if ev.ResourceStatusReason != nil {
+				err = errors.New(*ev.ResourceStatusReason)
+			}
+			return true, err
 		}
 	}
 	return false, nil
@@ -239,13 +246,25 @@ func isDeleteComplete(stackName string, ev *cloudformation.StackEvent) (bool, er
 	return false, nil
 }
 
+func formatResourceStatus(s string) string {
+	switch {
+	case strings.HasSuffix(s, "IN_PROGRESS"):
+		return color.YellowString(s)
+	case strings.HasSuffix(s, "FAILED") || strings.HasPrefix(s, "ROLLBACK"):
+		return color.RedString(s)
+	case strings.HasSuffix(s, "COMPLETE") && !strings.HasPrefix(s, "DELETE"):
+		return color.GreenString(s)
+	}
+	return s
+}
+
 func FormatStackEvent(event *cloudformation.StackEvent) string {
 	descr := ""
 	if event.ResourceStatusReason != nil {
 		descr = fmt.Sprintf("=> %q", *event.ResourceStatusReason)
 	}
 	return fmt.Sprintf("%s -> %s [%s] %s",
-		*event.ResourceStatus,
+		formatResourceStatus(*event.ResourceStatus),
 		*event.LogicalResourceId,
 		*event.ResourceType,
 		descr,

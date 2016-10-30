@@ -817,6 +817,12 @@
 			"revisionTime": "2016-10-22T11:49:03Z"
 		},
 		{
+			"checksumSHA1": "x77xUarDfVxctJMAJPCQzlYk8JM=",
+			"path": "github.com/fatih/color",
+			"revision": "bf82308e8c8546dc2b945157173eb8a959ae9505",
+			"revisionTime": "2016-10-25T12:05:01Z"
+		},
+		{
 			"checksumSHA1": "VdXZPcDRHK1T7XjBu2KW8Mb8S6w=",
 			"path": "github.com/flynn/go-shlex",
 			"revision": "3f9db97f856818214da2e1057f8ad84803971cff",
@@ -913,6 +919,18 @@
 			"path": "github.com/jmespath/go-jmespath",
 			"revision": "bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d",
 			"revisionTime": "2016-08-03T19:07:31Z"
+		},
+		{
+			"checksumSHA1": "ugnSryGF6VPBb5s87QgoRH6730g=",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "6c903ff4aa50920ca86087a280590b36b3152b9c",
+			"revisionTime": "2016-09-30T08:41:57Z"
+		},
+		{
+			"checksumSHA1": "xZuhljnmBysJPta/lMyYmJdujCg=",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8",
+			"revisionTime": "2016-08-06T12:27:52Z"
 		},
 		{
 			"checksumSHA1": "Ssz9STAL5P2+1poiM63klFjhqhE=",
