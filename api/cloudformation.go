@@ -223,7 +223,9 @@ func isCreateUpdateComplete(stackName string, ev *cloudformation.StackEvent) (bo
 			cloudformation.ResourceStatusUpdateFailed,
 			cloudformation.ResourceStatusCreateFailed,
 			cloudformation.StackStatusRollbackComplete,
-			cloudformation.StackStatusRollbackFailed:
+			cloudformation.StackStatusRollbackFailed,
+			cloudformation.StackStatusUpdateRollbackComplete,
+			cloudformation.StackStatusUpdateRollbackFailed:
 			var err error
 			if ev.ResourceStatusReason != nil {
 				err = errors.New(*ev.ResourceStatusReason)
@@ -248,12 +250,12 @@ func isDeleteComplete(stackName string, ev *cloudformation.StackEvent) (bool, er
 
 func formatResourceStatus(s string) string {
 	switch {
-	case strings.HasSuffix(s, "IN_PROGRESS"):
-		return color.YellowString(s)
-	case strings.HasSuffix(s, "FAILED") || strings.HasPrefix(s, "ROLLBACK"):
-		return color.RedString(s)
 	case strings.HasSuffix(s, "COMPLETE") && !strings.HasPrefix(s, "DELETE"):
 		return color.GreenString(s)
+	case strings.Contains(s, "FAILED") || strings.Contains(s, "ROLLBACK"):
+		return color.RedString(s)
+	case strings.HasSuffix(s, "IN_PROGRESS"):
+		return color.YellowString(s)
 	}
 	return s
 }
