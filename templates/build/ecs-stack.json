@@ -225,7 +225,18 @@
     "ECSLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "RetentionInDays": 7
+        "RetentionInDays": 14,
+        "LogGroupName": {
+          "Fn::Join": [
+            "-",
+            [
+              "ECSLogGroup",
+              {
+                "Ref": "AWS::StackName"
+              }
+            ]
+          ]
+        }
       }
     },
     "ECSAutoScalingGroup": {
@@ -247,6 +258,11 @@
           "Ref": "DesiredCapacity"
         },
         "Tags": [
+          {
+            "Key": "Name",
+            "Value": "ecs-instance",
+            "PropagateAtLaunch": "true"
+          },
           {
             "Key": "Role",
             "Value": "ecs-instance",
@@ -380,8 +396,7 @@
                 },
                 "owner": "ec2-user",
                 "group": "ec2-user",
-                "mode": "00400",
-                "authentication": "S3AccessCreds"
+                "mode": "00400"
               },
               "/etc/cron.hourly/authorized_keys": {
                 "content": {
@@ -422,7 +437,7 @@
                       {
                         "Ref": "ECSLogGroup"
                       },
-                      "\"\nEOF\nservice docker restart\n"
+                      "\"\nEOF\n# @TODO: remove `docker ps` once the following bug is fixed:\n# - https://github.com/aws/amazon-ecs-agent/issues/389\ndocker ps\nservice docker reload\n"
                     ]
                   ]
                 }
