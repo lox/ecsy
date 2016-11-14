@@ -15,6 +15,8 @@ Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and 
 
 ## Installing
 
+Either download the binary from https://dl.equinox.io/lox/ecsy/stable, or install with golang:
+
 ```
 go get github.com/lox/ecsy
 ```
