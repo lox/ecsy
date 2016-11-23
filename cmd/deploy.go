@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -50,6 +51,29 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 		taskDefinitionInput, err := t.Transform()
 		if err != nil {
 			return err
+		}
+
+		clusterStack, err := api.FindClusterStack(svc.Cloudformation, cluster)
+		if clusterStack == nil {
+			return fmt.Errorf("No cluster exists for %q. Use `create-cluster`",
+				cluster)
+		}
+
+		if logGroup, exists := api.GetStackOutputByKey(clusterStack, "LogGroupName"); exists {
+			log.Printf("Setting tasks to use log group %s", logGroup)
+
+			for _, def := range taskDefinitionInput.ContainerDefinitions {
+				if def.LogConfiguration == nil {
+					def.LogConfiguration = &ecs.LogConfiguration{
+						LogDriver: aws.String("awslogs"),
+						Options: map[string]*string{
+							"awslogs-group":         aws.String(logGroup),
+							"awslogs-region":        aws.String(os.Getenv("AWS_REGION")),
+							"awslogs-stream-prefix": aws.String(projectName),
+						},
+					}
+				}
+			}
 		}
 
 		log.Printf("Updating task definition for task %s", *taskDefinitionInput.Family)

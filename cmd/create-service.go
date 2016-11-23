@@ -18,7 +18,7 @@ import (
 )
 
 func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
-	var cluster, projectName, healthCheck, certificateID, logPrefix string
+	var cluster, projectName, healthCheck, certificateID string
 	var composeFiles []string
 	var disableRollback bool
 
@@ -48,9 +48,6 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 	cmd.Flag("disable-rollback", "Don't rollback created infrastructure if a failure occurs").
 		BoolVar(&disableRollback)
 
-	cmd.Flag("log-prefix", "The prefix to provide to cloudwatch logs for container output, defaults to project name").
-		StringVar(&logPrefix)
-
 	cmd.Action(func(c *kingpin.ParseContext) error {
 		log.Printf("Creating service %s on %s", projectName, cluster)
 
@@ -77,10 +74,6 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
-		if logPrefix == "" {
-			logPrefix = projectName
-		}
-
 		if logGroup, exists := api.GetStackOutputByKey(clusterStack, "LogGroupName"); exists {
 			log.Printf("Setting tasks to use log group %s", logGroup)
 
@@ -91,7 +84,7 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 						Options: map[string]*string{
 							"awslogs-group":         aws.String(logGroup),
 							"awslogs-region":        aws.String(os.Getenv("AWS_REGION")),
-							"awslogs-stream-prefix": aws.String(logPrefix),
+							"awslogs-stream-prefix": aws.String(projectName),
 						},
 					}
 				}
