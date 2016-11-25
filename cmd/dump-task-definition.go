@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/lox/ecsy/api"
 	"github.com/lox/ecsy/compose"
@@ -28,7 +28,7 @@ func ConfigureDumpTaskDefinition(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
-		fmt.Println(taskDefinitionInput)
+		log.Println(taskDefinitionInput.String())
 
 		return nil
 	})

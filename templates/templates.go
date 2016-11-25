@@ -29,7 +29,7 @@ func readTemplateBytes(path string) ([]byte, error) {
 type Template string
 
 func EcsStack() string {
-	b, err := readTemplateBytes("/templates/build/ecs-stack.json")
+	b, err := readTemplateBytes("/templates/src/ecs-stack.yml")
 	if err != nil {
 		panic(err)
 	}
@@ -37,7 +37,7 @@ func EcsStack() string {
 }
 
 func EcsService() string {
-	b, err := readTemplateBytes("/templates/build/ecs-service.json")
+	b, err := readTemplateBytes("/templates/src/ecs-service.yml")
 	if err != nil {
 		panic(err)
 	}
@@ -45,7 +45,7 @@ func EcsService() string {
 }
 
 func NetworkStack() string {
-	b, err := readTemplateBytes("/templates/build/network-stack.json")
+	b, err := readTemplateBytes("/templates/src/network-stack.yml")
 	if err != nil {
 		panic(err)
 	}

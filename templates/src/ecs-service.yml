@@ -51,6 +51,7 @@ Parameters:
 Conditions:
     UseHttpListener:
       !Equals [ $(SSLCertificateId), "" ]
+
     UseHttpsListener:
       !Not [ !Equals [ $(SSLCertificateId), "" ] ]
 
