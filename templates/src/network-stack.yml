@@ -1,7 +1,6 @@
-
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: one public subnet and two private subnets, across two AZs.'
+Description: 'ECS VPC Network: one public subnet and two private subnets, across two AZs.'
 
 Mappings:
   SubnetConfig:

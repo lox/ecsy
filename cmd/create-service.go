@@ -106,11 +106,10 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 
 		ctx := api.CreateStackContext{
 			Params: map[string]string{
+				"VpcStack":         network.StackName,
 				"ECSCluster":       cluster,
 				"TaskFamily":       *resp.TaskDefinition.Family,
 				"TaskDefinition":   *resp.TaskDefinition.TaskDefinitionArn,
-				"Subnets":          network.Subnets,
-				"Vpc":              network.Vpc,
 				"ECSSecurityGroup": network.SecurityGroup,
 				"SSLCertificateId": certificateID,
 			},

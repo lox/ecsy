@@ -1,5 +1,16 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECS Service: A Service, a Task Definition and an ELB'
 
 Parameters:
+  NetworkStack:
+    Type: String
+    Description: The name of the network stack
+
+  TaskFamily:
+    Type: String
+    Description: The family name of the task in use
+
   TaskFamily:
     Type: String
     Description: The family name of the task in use
@@ -30,14 +41,6 @@ Parameters:
     Type: AWS::EC2::SecurityGroup::Id
     Description: A security group for the ELB that has access to the ECS Cluster Instances
 
-  Vpc:
-    Type: AWS::EC2::VPC::Id
-    Description: The VPC for the Security Group
-
-  Subnets:
-    Type: CommaDelimitedList
-    Description: Subnets to create the ELB in
-
   HealthCheckUrl:
     Type: String
     Description: The URL to hit when doing healthchecks from the ELB
@@ -50,10 +53,10 @@ Parameters:
 
 Conditions:
     UseHttpListener:
-      !Equals [ $(SSLCertificateId), "" ]
+      !Equals [ !Ref SSLCertificateId, "" ]
 
     UseHttpsListener:
-      !Not [ !Equals [ $(SSLCertificateId), "" ] ]
+      !Not [ !Equals [ !Ref SSLCertificateId, "" ] ]
 
 Outputs:
   StackType:
@@ -62,29 +65,29 @@ Outputs:
   ECSLoadBalancer:
     Value: !If [
         "UseHttpsListener",
-        "https://$(HTTPSLoadBalancer[DNSName]):$(ELBPort)",
-        "http://$(HTTPLoadBalancer[DNSName]):443"
+        !Sub "https://${HTTPSLoadBalancer.DNSName}:${ELBPort}",
+        !Sub "http://${HTTPLoadBalancer[DNSName]}:${ELBPort}"
       ]
 
   ECSCluster:
-    Value: $(ECSCluster)
+    Value: !Ref ECSCluster
 
   ECSService:
-    Value: $(ECSService)
+    Value: !Ref ECSService
 
   TaskFamily:
-    Value: $(TaskFamily)
+    Value: !Ref TaskFamily
 
 Resources:
   ELBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
        GroupDescription : Security group for ELB in front of ECS
-       VpcId : $(Vpc)
+       VpcId : { 'Fn::ImportValue': !Sub '${NetworkStack}-VpcId' }
        SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: $(ELBPort)
-          ToPort: $(ELBPort)
+          FromPort: !Ref ELBPort
+          ToPort: !Ref ELBPort
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: 443
@@ -95,14 +98,14 @@ Resources:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Condition: UseHttpListener
     Properties:
-      Subnets: $(Subnets)
-      SecurityGroups: [ $(ELBSecurityGroup), $(ECSSecurityGroup) ]
+      Subnets: !Ref Subnets
+      SecurityGroups: [ !Ref ELBSecurityGroup, !Ref ECSSecurityGroup ]
       Listeners:
-        - LoadBalancerPort: $(ELBPort)
-          InstancePort: $(ContainerPort)
+        - LoadBalancerPort: !Ref ELBPort
+          InstancePort: !Ref ContainerPort
           Protocol: HTTP
       HealthCheck:
-        Target: HTTP:$(ContainerPort)$(HealthCheckUrl)
+        Target: !Sub "HTTP:${ContainerPort}${HealthCheckUrl}"
         HealthyThreshold: 2
         UnhealthyThreshold: 10
         Interval: 30
@@ -115,18 +118,18 @@ Resources:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Condition: UseHttpsListener
     Properties:
-      Subnets: $(Subnets)
-      SecurityGroups: [ $(ELBSecurityGroup), $(ECSSecurityGroup) ]
+      Subnets: !Ref Subnets
+      SecurityGroups: [ !Ref ELBSecurityGroup, !Ref ECSSecurityGroup ]
       Listeners:
-        - LoadBalancerPort: $(ELBPort)
-          InstancePort: $(ContainerPort)
+        - LoadBalancerPort: !Ref ELBPort
+          InstancePort: !Ref ContainerPort
           Protocol: HTTP
         - LoadBalancerPort: 443
-          InstancePort: $(ContainerPort)
+          InstancePort: !Ref ContainerPort
           Protocol: HTTPS
-          SSLCertificateId: $(SSLCertificateId)
+          SSLCertificateId: !Ref SSLCertificateId
       HealthCheck:
-        Target: HTTP:$(ContainerPort)$(HealthCheckUrl)
+        Target: !Sub "HTTP:${ContainerPort}${HealthCheckUrl}"
         HealthyThreshold: 2
         UnhealthyThreshold: 10
         Interval: 30
@@ -138,14 +141,14 @@ Resources:
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      Cluster: $(ECSCluster)
+      Cluster: !Ref ECSCluster
       DesiredCount: 1
       LoadBalancers:
-        - ContainerName: $(ContainerName)
-          ContainerPort: $(ContainerPort)
-          LoadBalancerName: !If [ "UseHttpsListener", $(HTTPSLoadBalancer), $(HTTPLoadBalancer) ]
-      Role: $(ECSServiceRole)
-      TaskDefinition: $(TaskDefinition)
+        - ContainerName: !Ref ContainerName
+          ContainerPort: !Ref ContainerPort
+          LoadBalancerName: !If [ "UseHttpsListener", !Ref HTTPSLoadBalancer, !Ref HTTPLoadBalancer ]
+      Role: !Ref ECSServiceRole
+      TaskDefinition: !Ref TaskDefinition
 
   ECSServiceRole:
     Type: AWS::IAM::Role
