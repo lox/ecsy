@@ -3,14 +3,14 @@
 
 Outputs:
   Vpc:
-    Value: $(Vpc)
+    Value: !Ref Vpc
 
   Subnets:
     Value:
-      !Join [ ",", [ $(Subnet0), $(Subnet1), $(Subnet2) ] ]
+      !Join [ ",", [ !Ref Subnet0, !Ref Subnet1, !Ref Subnet2 ] ]
 
   SecurityGroup:
-    Value: $(SecurityGroup)
+    Value: !Ref SecurityGroup
 
 Resources:
   Vpc:
@@ -20,7 +20,7 @@ Resources:
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: $(AWS::StackName)
+          Value: !Ref AWS::StackName
 
   Gateway:
     Type: AWS::EC2::InternetGateway
@@ -29,65 +29,65 @@ Resources:
   GatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      InternetGatewayId: $(Gateway)
-      VpcId: $(Vpc)
+      InternetGatewayId: !Ref Gateway
+      VpcId: !Ref Vpc
 
   Subnet0:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 0, !GetAZs '$(AWS::Region)' ]
+      AvailabilityZone: !Select [ 0, !GetAZs [!Ref AWS::Region]]
       CidrBlock: 10.0.1.0/24
-      VpcId: $(Vpc)
+      VpcId: !Ref Vpc
 
   Subnet1:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 1, !GetAZs '$(AWS::Region)' ]
+      AvailabilityZone: !Select [ 1, !GetAZs [!Ref AWS::Region ]]
       CidrBlock: 10.0.2.0/24
-      VpcId: $(Vpc)
+      VpcId: !Ref Vpc
 
   Subnet2:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 2, !GetAZs '$(AWS::Region)' ]
+      AvailabilityZone: !Select [ 2, !GetAZs ['!Ref AWS::Region)']]
       CidrBlock: 10.0.3.0/24
-      VpcId: $(Vpc)
+      VpcId: !Ref Vpc
 
   Routes:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: $(Vpc)
+      VpcId: !Ref Vpc
 
   RouteDefault:
     Type: AWS::EC2::Route
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: $(Gateway)
-      RouteTableId: $(Routes)
+      GatewayId: !Ref Gateway
+      RouteTableId: !Ref Routes
 
   Subnet0Routes:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: $(Subnet0)
-      RouteTableId: $(Routes)
+      SubnetId: !Ref Subnet0
+      RouteTableId: !Ref Routes
 
   Subnet1Routes:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: $(Subnet1)
-      RouteTableId: $(Routes)
+      SubnetId: !Ref Subnet1
+      RouteTableId: !Ref Routes
 
   Subnet2Routes:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: $(Subnet2)
-      RouteTableId: $(Routes)
+      SubnetId: !Ref Subnet2
+      RouteTableId: !Ref Routes
 
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: VPC/EC2 Security Group
-      VpcId: $(Vpc)
+      VpcId: !Ref Vpc
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -97,8 +97,8 @@ Resources:
   SecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      GroupId: $(SecurityGroup)
+      GroupId: !Ref SecurityGroup
       IpProtocol: tcp
       FromPort: 0
       ToPort: 65535
-      SourceSecurityGroupId: $(SecurityGroup)
+      SourceSecurityGroupId: !Ref SecurityGroup

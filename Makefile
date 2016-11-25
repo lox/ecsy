@@ -1,13 +1,15 @@
 PREFIX=github.com/lox/ecsy
 VERSION=$(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
 FLAGS=-X main.Version=$(VERSION)
+TEMPLATES=templates/src/ecs-service.yml templates/src/ecs-stack.yml templates/src/network-stack.yml
+
+.PHONY: test setup build install clean templates
 
 test:
-	go get github.com/kardianos/govendor
 	govendor test +local
 
 setup:
-	gem install cfoo
+	go get github.com/kardianos/govendor
 	go get github.com/mjibson/esc
 
 build: templates
@@ -16,23 +18,11 @@ build: templates
 install: templates
 	go install -ldflags="$(FLAGS)" $(PREFIX)
 
-templates: templates/build/ecs-service.json templates/build/ecs-stack.json templates/build/network-stack.json
-	esc -o templates/static.go -pkg templates templates/build
+templates: $(TEMPLATES)
+	esc -o templates/static.go -pkg templates templates/src
+
+validate:
+	$(foreach var,$(TEMPLATES),aws cloudformation validate-template --template-body file://$(var);)
 
 clean:
-	rm $(wildcard templates/build/*.json)
-
-templates/build/ecs-stack.json: templates/src/ecs-stack.yml
-	@mkdir -p templates/build/
-	cfoo $^ > $@
-	test -s $@
-
-templates/build/network-stack.json: templates/src/network-stack.yml
-	@mkdir -p templates/build/
-	cfoo $^ > $@
-	test -s $@
-
-templates/build/ecs-service.json: templates/src/ecs-service.yml
-	@mkdir -p templates/build/
-	cfoo $^ > $@
-	test -s $@
+	rm templates/static.go
