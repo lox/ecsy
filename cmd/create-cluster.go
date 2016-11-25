@@ -62,8 +62,6 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 		BoolVar(&disableRollback)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		log.Printf("Creating cluster %s", cluster)
-
 		_, err := svc.ECS.CreateCluster(&ecs.CreateClusterInput{
 			ClusterName: aws.String(cluster),
 		})
@@ -73,14 +71,15 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
+		log.Printf("%#v", network)
+
 		timer := time.Now()
 		stackName := cluster + "-ecs-" + time.Now().Format(stackDateFormat)
 		log.Printf("Creating cloudformation stack %s", stackName)
 
 		ctx := api.CreateStackContext{
 			Params: map[string]string{
-				"Subnets":            network.Subnets,
-				"SecurityGroup":      network.SecurityGroup,
+				"NetworkStack":       network.StackName,
 				"KeyName":            keyName,
 				"ECSCluster":         cluster,
 				"InstanceType":       instanceType,

@@ -74,7 +74,12 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
-		if logGroup, exists := api.GetStackOutputByKey(clusterStack, "LogGroupName"); exists {
+		clusterOutput, err := api.StackOutputs(svc.Cloudformation, *clusterStack.StackName)
+		if err != nil {
+			return err
+		}
+
+		if logGroup, exists := clusterOutput["LogGroupName"]; exists {
 			log.Printf("Setting tasks to use log group %s", logGroup)
 
 			for _, def := range taskDefinitionInput.ContainerDefinitions {
@@ -106,11 +111,11 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 
 		ctx := api.CreateStackContext{
 			Params: map[string]string{
-				"VpcStack":         network.StackName,
+				"NetworkStack":     network.StackName,
 				"ECSCluster":       cluster,
+				"ECSSecurityGroup": clusterOutput["SecurityGroup"],
 				"TaskFamily":       *resp.TaskDefinition.Family,
 				"TaskDefinition":   *resp.TaskDefinition.TaskDefinitionArn,
-				"ECSSecurityGroup": network.SecurityGroup,
 				"SSLCertificateId": certificateID,
 			},
 			DisableRollback: disableRollback,

@@ -22,7 +22,7 @@ templates: $(TEMPLATES)
 	esc -o templates/static.go -pkg templates templates/src
 
 validate:
-	$(foreach var,$(TEMPLATES),aws cloudformation validate-template --template-body file://$(var);)
+	@echo $(TEMPLATES) | xargs -n1 -t -I{} aws cloudformation validate-template --template-body file://{}
 
 clean:
 	rm templates/static.go

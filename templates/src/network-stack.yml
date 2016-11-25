@@ -2,6 +2,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS VPC Network: one public subnet and two private subnets, across two AZs.'
 
+Parameters:
+  ZoneName:
+    Type: String
+    Description: The name of the internal zone
+
 Mappings:
   SubnetConfig:
     VPC: { CIDR: 10.0.0.0/16 }
@@ -37,11 +42,6 @@ Outputs:
     Value: !Ref Subnet2Private
     Export:
       Name: !Sub '${AWS::StackName}-Subnet2Private'
-
-  SecurityGroup:
-    Value: !Ref SecurityGroup
-    Export:
-      Name: !Sub '${AWS::StackName}-SecurityGroup'
 
 Resources:
   Vpc:

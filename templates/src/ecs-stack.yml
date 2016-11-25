@@ -202,9 +202,8 @@ Resources:
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      AssociatePublicIpAddress: true
+      AssociatePublicIpAddress: false
       InstanceMonitoring: true
-      SecurityGroups: [  { 'Fn::ImportValue': !Sub '${NetworkStack}-Subnet1Private' } ]
       ImageId: !FindInMap [ AWSRegionToAMI, !Ref 'AWS::Region', AMIID ]
       InstanceType: !Ref InstanceType
       IamInstanceProfile: !Ref EC2InstanceProfile
@@ -290,14 +289,20 @@ Resources:
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: App security group
+      GroupDescription: ECS Instance security group
       VpcId: { 'Fn::ImportValue': !Sub '${NetworkStack}-VpcId' }
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
+          FromPort: '1'
+          ToPort: '65535'
           CidrIp: 10.0.0.0/16
-        # - IpProtocol: tcp
-        #   SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${NetworkStack}-SecurityGroup' }
-        #   FromPort: '1'
-        #   ToPort: '65535'
+
+  SecurityGroupSelfReference:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    DependsOn: "SecurityGroup"
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: '1'
+      ToPort: '65535'
+      SourceSecurityGroupId: !Ref SecurityGroup

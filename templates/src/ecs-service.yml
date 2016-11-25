@@ -66,7 +66,7 @@ Outputs:
     Value: !If [
         "UseHttpsListener",
         !Sub "https://${HTTPSLoadBalancer.DNSName}:${ELBPort}",
-        !Sub "http://${HTTPLoadBalancer[DNSName]}:${ELBPort}"
+        !Sub "http://${HTTPLoadBalancer.DNSName}:${ELBPort}"
       ]
 
   ECSCluster:
@@ -98,7 +98,8 @@ Resources:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Condition: UseHttpListener
     Properties:
-      Subnets: !Ref Subnets
+      Subnets:
+        - { 'Fn::ImportValue': !Sub '${NetworkStack}-Subnet0Public' }
       SecurityGroups: [ !Ref ELBSecurityGroup, !Ref ECSSecurityGroup ]
       Listeners:
         - LoadBalancerPort: !Ref ELBPort
@@ -118,7 +119,9 @@ Resources:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Condition: UseHttpsListener
     Properties:
-      Subnets: !Ref Subnets
+      Subnets:
+        - { 'Fn::ImportValue': !Sub '${NetworkStack}-Subnet0Public' }
+        - { 'Fn::ImportValue': !Sub '${NetworkStack}-Subnet2Private' }
       SecurityGroups: [ !Ref ELBSecurityGroup, !Ref ECSSecurityGroup ]
       Listeners:
         - LoadBalancerPort: !Ref ELBPort
