@@ -189,7 +189,7 @@ var _escData = map[string]*_escFile{
 	"/templates/src/ecs-service.yml": {
 		local:   "templates/src/ecs-service.yml",
 		size:    5090,
-		modtime: 1480309640,
+		modtime: 1480310754,
 		compressed: `
 H4sIAAAJbogA/+xXTW/bOBO+61dMjAIFijpf7ftiVzfHcbcGvFkjctJD0QNN0xFRmdSSVIO06H/foUhZ
 pCUnTrB76xeQcGaeh+Q8MxwNh8Nk9ClbsE1ZEMM+SLUh5pYpzaVI4fX56dnp8PR3/Pc6uWSaKl4aZ5mM
@@ -219,7 +219,7 @@ TNW0RG0nr85TdBDY9S7UJ27yp6Ho+VM7R49RZXKp+HfWN8h2opoBHb9v3gySfwIAAP//V/2mBOITAAA=
 	"/templates/src/ecs-stack.yml": {
 		local:   "templates/src/ecs-stack.yml",
 		size:    9604,
-		modtime: 1480308922,
+		modtime: 1480310754,
 		compressed: `
 H4sIAAAJbogA/8xae3PbNhL/X58CVTPVTCcUJVmxHU7dO1WWW11rW2Mp6fR6HQcCIQkTEuAAoB/x+bvf
 AiAlvmQ7yc3cNY1DLn7YFxa7C9Ce57VGv88XNE4irOmZkDHW76lUTPAAdQa9fs/rvYX/O61TqohkiXYj
@@ -275,7 +275,7 @@ FF3U3uOjTGe3hU9pQqGZuASXtEuo9lOu3Dqm7ny0xwFNxjcbPne3ICWVG+X9JwAA//88flFKhCUAAA==
 	"/templates/src/network-stack.yml": {
 		local:   "templates/src/network-stack.yml",
 		size:    3175,
-		modtime: 1480305481,
+		modtime: 1480310754,
 		compressed: `
 H4sIAAAJbogA/7xW3U7bTBC9z1MM0Sf5hvDZLqpU36VJoFFbiJKISlS92DgLrHB2V941NEJ5947XG/8l
 NgHEnxSxc+bsmeOZcXq9Xqf/azanKxkRTc9EvCL6isaKCR6A47ue23O/4J/TGVIVxkzqLDIazOBqMoAL
