@@ -2,11 +2,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS VPC Network: one public subnet and two private subnets, across two AZs.'
 
-Parameters:
-  ZoneName:
-    Type: String
-    Description: The name of the internal zone
-
 Mappings:
   SubnetConfig:
     VPC: { CIDR: 10.0.0.0/16 }
@@ -16,14 +11,9 @@ Mappings:
 
 Outputs:
   VpcId:
-    Value: !Ref Vpc
+    Value: !Ref VPC
     Export:
       Name: !Sub "${AWS::StackName}-VpcId"
-
-  InternalZone:
-    Value: !Sub "${AWS::StackName}.internal"
-    Export:
-      Name: !Sub "${AWS::StackName}-InternalZone"
 
   Subnet0Public:
     Description: 'Subnet0 public.'
@@ -44,7 +34,7 @@ Outputs:
       Name: !Sub '${AWS::StackName}-Subnet2Private'
 
 Resources:
-  Vpc:
+  VPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: !FindInMap [ SubnetConfig, "VPC", "CIDR" ]
@@ -55,28 +45,6 @@ Resources:
         - Key: Name
           Value: !Ref "AWS::StackName"
 
-  HostedZone:
-    Type: AWS::Route53::HostedZone
-    Properties:
-      HostedZoneConfig: { Comment: Hosted Zone for Service Discovery }
-      Name: !Sub "${AWS::StackName}.internal"
-      VPCs:
-        - VPCId: !Ref Vpc
-          VPCRegion: !Ref "AWS::Region"
-
-  DHCPOptions:
-    Type: AWS::EC2::DHCPOptions
-    Properties:
-      DomainName: !Sub "${AWS::StackName}.internal"
-      DomainNameServers:
-        - AmazonProvidedDNS
-
-  DHCPAssociation:
-    Type: AWS::EC2::VPCDHCPOptionsAssociation
-    Properties:
-      DhcpOptionsId: !Ref DHCPOptions
-      VpcId: !Ref Vpc
-
   Gateway:
     Type: AWS::EC2::InternetGateway
     Properties: {}
@@ -86,7 +54,7 @@ Resources:
     DependsOn: Gateway
     Properties:
       InternetGatewayId: !Ref Gateway
-      VpcId: !Ref Vpc
+      VpcId: !Ref VPC
 
   EIP:
     Type: 'AWS::EC2::EIP'
@@ -105,31 +73,31 @@ Resources:
       MapPublicIpOnLaunch: true
       AvailabilityZone: !Select [ 0, !GetAZs '' ]
       CidrBlock: !FindInMap [ SubnetConfig, "Subnet0", "CIDR" ]
-      VpcId: !Ref Vpc
+      VpcId: !Ref VPC
 
   Subnet1Private:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: !Select [ 0, !GetAZs '' ]
       CidrBlock: !FindInMap [ SubnetConfig, "Subnet1", "CIDR" ]
-      VpcId: !Ref Vpc
+      VpcId: !Ref VPC
 
   Subnet2Private:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: !Select [ 1, !GetAZs '' ]
       CidrBlock: !FindInMap [ SubnetConfig, "Subnet2", "CIDR" ]
-      VpcId: !Ref Vpc
+      VpcId: !Ref VPC
 
   RoutesPublic:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref Vpc
+      VpcId: !Ref VPC
 
   RoutesPrivate:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref Vpc
+      VpcId: !Ref VPC
 
   DefaultGatewayRoute:
     Type: AWS::EC2::Route

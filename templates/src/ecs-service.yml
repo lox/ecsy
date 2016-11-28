@@ -3,9 +3,29 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS Service: A Service, a Task Definition and an ELB'
 
 Parameters:
-  NetworkStack:
+  VpcId:
+    Type: WS::EC2::VPC::Id
+    Description: The identifier of VPC to run in
+
+  VpcPublicSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The public subnet in the VPC specified with VpcId
+
+  VpcPrivateSubnet1Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: The first private subnet in the specified with VpcId
+
+  VpcPrivateSubnet2Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: The second private subnet in the specified with VpcId
+
+  ECSCluster:
     Type: String
-    Description: The name of the network stack
+    Description: The ECS cluster to attach the service to
+
+  ECSInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: A security group that can access ECS instances
 
   TaskFamily:
     Type: String
@@ -18,10 +38,6 @@ Parameters:
   TaskDefinition:
     Type: String
     Description: The identifier of the ECS TaskDefinition to use
-
-  ECSCluster:
-    Type: String
-    Description: The identifier of the ECS Cluster to use
 
   ContainerName:
     Type: String
@@ -36,10 +52,6 @@ Parameters:
     Type: Number
     Description: The port on the load balancer to open
     Default: 80
-
-  ECSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup::Id
-    Description: A security group for the ELB that has access to the ECS Cluster Instances
 
   HealthCheckUrl:
     Type: String
@@ -69,9 +81,6 @@ Outputs:
         !Sub "http://${HTTPLoadBalancer.DNSName}:${ELBPort}"
       ]
 
-  ECSCluster:
-    Value: !Ref ECSCluster
-
   ECSService:
     Value: !Ref ECSService
 
@@ -83,7 +92,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
        GroupDescription : Security group for ELB in front of ECS
-       VpcId : { 'Fn::ImportValue': !Sub '${NetworkStack}-VpcId' }
+       VpcId : !Ref VpcId
        SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: !Ref ELBPort
@@ -99,8 +108,10 @@ Resources:
     Condition: UseHttpListener
     Properties:
       Subnets:
-        - { 'Fn::ImportValue': !Sub '${NetworkStack}-Subnet0Public' }
-      SecurityGroups: [ !Ref ELBSecurityGroup, !Ref ECSSecurityGroup ]
+        - !Ref VpcPublicSubnetId
+      SecurityGroups:
+        - !Ref ELBSecurityGroup
+        - !Ref ECSInstanceSecurityGroup
       Listeners:
         - LoadBalancerPort: !Ref ELBPort
           InstancePort: !Ref ContainerPort
@@ -120,9 +131,10 @@ Resources:
     Condition: UseHttpsListener
     Properties:
       Subnets:
-        - { 'Fn::ImportValue': !Sub '${NetworkStack}-Subnet0Public' }
-        - { 'Fn::ImportValue': !Sub '${NetworkStack}-Subnet2Private' }
-      SecurityGroups: [ !Ref ELBSecurityGroup, !Ref ECSSecurityGroup ]
+        - !Ref VpcPublicSubnetId
+      SecurityGroups:
+        - !Ref ELBSecurityGroup
+        - !Ref ECSInstanceSecurityGroup
       Listeners:
         - LoadBalancerPort: !Ref ELBPort
           InstancePort: !Ref ContainerPort

@@ -71,25 +71,26 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
-		log.Printf("%#v", network)
-
 		timer := time.Now()
 		stackName := cluster + "-ecs-" + time.Now().Format(stackDateFormat)
 		log.Printf("Creating cloudformation stack %s", stackName)
 
 		ctx := api.CreateStackContext{
 			Params: map[string]string{
-				"NetworkStack":       network.StackName,
-				"KeyName":            keyName,
-				"ECSCluster":         cluster,
-				"InstanceType":       instanceType,
-				"DesiredCapacity":    strconv.Itoa(instanceCount),
-				"DockerHubUsername":  dockerUsername,
-				"DockerHubPassword":  dockerPassword,
-				"DockerHubEmail":     dockerEmail,
-				"LogspoutTarget":     logspoutTarget,
-				"DatadogApiKey":      datadogKey,
-				"AuthorizedUsersUrl": authorizedKeys,
+				"VpcId":               network.VpcId,
+				"VpcPublicSubnetId":   network.Subnet0Public,
+				"VpcPrivateSubnet1Id": network.Subnet1Private,
+				"VpcPrivateSubnet2Id": network.Subnet2Private,
+				"KeyName":             keyName,
+				"ECSCluster":          cluster,
+				"InstanceType":        instanceType,
+				"DesiredCapacity":     strconv.Itoa(instanceCount),
+				"DockerHubUsername":   dockerUsername,
+				"DockerHubPassword":   dockerPassword,
+				"DockerHubEmail":      dockerEmail,
+				"LogspoutTarget":      logspoutTarget,
+				"DatadogApiKey":       datadogKey,
+				"AuthorizedUsersUrl":  authorizedKeys,
 			},
 			DisableRollback: disableRollback,
 		}

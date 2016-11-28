@@ -3,9 +3,21 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS Cluster: autoscaling instances and an ECS Cluster.'
 
 Parameters:
-  NetworkStack:
-    Type: String
-    Description: The name of the network stack
+  VpcId:
+    Type: WS::EC2::VPC::Id
+    Description: The identifier of VPC to run in
+
+  VpcPublicSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The public subnet in the VPC specified with VpcId
+
+  VpcPrivateSubnet1Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: The first private subnet in the specified with VpcId
+
+  VpcPrivateSubnet2Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: The second private subnet in the specified with VpcId
 
   KeyName:
     Description: The ssh keypair used to access the ecs instances
@@ -179,8 +191,8 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       VPCZoneIdentifier:
-        - { 'Fn::ImportValue': !Sub '${NetworkStack}-Subnet1Private' }
-        - { 'Fn::ImportValue': !Sub '${NetworkStack}-Subnet2Private' }
+        - !Ref VpcPrivateSubnet1Id
+        - !Ref VpcPrivateSubnet2Id
       LaunchConfigurationName: !Ref LaunchConfiguration
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
@@ -203,6 +215,7 @@ Resources:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
       AssociatePublicIpAddress: false
+      SecurityGroups: [ !Ref SecurityGroup ]
       InstanceMonitoring: true
       ImageId: !FindInMap [ AWSRegionToAMI, !Ref 'AWS::Region', AMIID ]
       InstanceType: !Ref InstanceType
@@ -290,7 +303,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: ECS Instance security group
-      VpcId: { 'Fn::ImportValue': !Sub '${NetworkStack}-VpcId' }
+      VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: '1'

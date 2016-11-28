@@ -9,7 +9,6 @@ import (
 type NetworkOutputs struct {
 	StackName      string
 	VpcId          string
-	InternalZone   string
 	Subnet0Public  string
 	Subnet1Private string
 	Subnet2Private string
@@ -56,7 +55,6 @@ func FindNetworkStack(svc cfnInterface, clusterName string) (NetworkOutputs, err
 	return NetworkOutputs{
 		StackName:      stackName,
 		VpcId:          outputs["VpcId"],
-		InternalZone:   outputs["InternalZone"],
 		Subnet0Public:  outputs["Subnet0Public"],
 		Subnet1Private: outputs["Subnet1Private"],
 		Subnet2Private: outputs["Subnet2Private"],
