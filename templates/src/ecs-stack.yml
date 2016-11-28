@@ -4,7 +4,7 @@ Description: 'ECS Cluster: autoscaling instances and an ECS Cluster.'
 
 Parameters:
   VpcId:
-    Type: WS::EC2::VPC::Id
+    Type: AWS::EC2::VPC::Id
     Description: The identifier of VPC to run in
 
   VpcPublicSubnetId:
