@@ -7,10 +7,11 @@ import (
 )
 
 type NetworkOutputs struct {
-	StackName     string
-	Vpc           string
-	Subnets       string
-	SecurityGroup string
+	StackName      string
+	VpcId          string
+	Subnet0Public  string
+	Subnet1Private string
+	Subnet2Private string
 }
 
 func FindClusterStack(svc cfnInterface, clusterName string) (*cloudformation.Stack, error) {
@@ -51,15 +52,12 @@ func FindNetworkStack(svc cfnInterface, clusterName string) (NetworkOutputs, err
 		return NetworkOutputs{StackName: stackName}, err
 	}
 
-	if err := outputs.RequireKeys("Vpc", "Subnets", "SecurityGroup"); err != nil {
-		return NetworkOutputs{StackName: stackName}, err
-	}
-
 	return NetworkOutputs{
-		StackName:     stackName,
-		Vpc:           outputs["Vpc"],
-		Subnets:       outputs["Subnets"],
-		SecurityGroup: outputs["SecurityGroup"],
+		StackName:      stackName,
+		VpcId:          outputs["VpcId"],
+		Subnet0Public:  outputs["Subnet0Public"],
+		Subnet1Private: outputs["Subnet1Private"],
+		Subnet2Private: outputs["Subnet2Private"],
 	}, nil
 }
 

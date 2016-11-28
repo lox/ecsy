@@ -5,4 +5,4 @@ services:
     image: amazon/amazon-ecs-sample
     ports:
       - 80:80
-    mem_limit: 100
+    mem_limit: 104857600

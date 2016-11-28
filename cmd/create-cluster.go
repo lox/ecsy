@@ -62,8 +62,6 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 		BoolVar(&disableRollback)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		log.Printf("Creating cluster %s", cluster)
-
 		_, err := svc.ECS.CreateCluster(&ecs.CreateClusterInput{
 			ClusterName: aws.String(cluster),
 		})
@@ -79,18 +77,20 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 
 		ctx := api.CreateStackContext{
 			Params: map[string]string{
-				"Subnets":            network.Subnets,
-				"SecurityGroup":      network.SecurityGroup,
-				"KeyName":            keyName,
-				"ECSCluster":         cluster,
-				"InstanceType":       instanceType,
-				"DesiredCapacity":    strconv.Itoa(instanceCount),
-				"DockerHubUsername":  dockerUsername,
-				"DockerHubPassword":  dockerPassword,
-				"DockerHubEmail":     dockerEmail,
-				"LogspoutTarget":     logspoutTarget,
-				"DatadogApiKey":      datadogKey,
-				"AuthorizedUsersUrl": authorizedKeys,
+				"VpcId":               network.VpcId,
+				"VpcPublicSubnetId":   network.Subnet0Public,
+				"VpcPrivateSubnet1Id": network.Subnet1Private,
+				"VpcPrivateSubnet2Id": network.Subnet2Private,
+				"KeyName":             keyName,
+				"ECSCluster":          cluster,
+				"InstanceType":        instanceType,
+				"DesiredCapacity":     strconv.Itoa(instanceCount),
+				"DockerHubUsername":   dockerUsername,
+				"DockerHubPassword":   dockerPassword,
+				"DockerHubEmail":      dockerEmail,
+				"LogspoutTarget":      logspoutTarget,
+				"DatadogApiKey":       datadogKey,
+				"AuthorizedUsersUrl":  authorizedKeys,
 			},
 			DisableRollback: disableRollback,
 		}

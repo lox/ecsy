@@ -1,26 +1,49 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECS VPC Network: one public subnet and two private subnets, across two AZs.'
 
-## Create an Amazon Virtual Private Network
+Mappings:
+  SubnetConfig:
+    VPC: { CIDR: 10.0.0.0/16 }
+    Subnet0: { CIDR: 10.0.2.0/24 }
+    Subnet1: { CIDR: 10.0.3.0/24 }
+    Subnet2: { CIDR: 10.0.4.0/24 }
 
 Outputs:
-  Vpc:
-    Value: !Ref Vpc
+  VpcId:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-VpcId"
 
-  Subnets:
-    Value:
-      !Join [ ",", [ !Ref Subnet0, !Ref Subnet1, !Ref Subnet2 ] ]
+  Subnet0Public:
+    Description: 'Subnet0 public.'
+    Value: !Ref Subnet0Public
+    Export:
+      Name: !Sub '${AWS::StackName}-Subnet0Public'
 
-  SecurityGroup:
-    Value: !Ref SecurityGroup
+  Subnet1Private:
+    Description: 'Subnet1 private.'
+    Value: !Ref Subnet1Private
+    Export:
+      Name: !Sub '${AWS::StackName}-Subnet1Private'
+
+  Subnet2Private:
+    Description: 'Subnet2 private.'
+    Value: !Ref Subnet2Private
+    Export:
+      Name: !Sub '${AWS::StackName}-Subnet2Private'
 
 Resources:
-  Vpc:
+  VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: 10.0.0.0/16
+      CidrBlock: !FindInMap [ SubnetConfig, "VPC", "CIDR" ]
       InstanceTenancy: default
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Ref AWS::StackName
+          Value: !Ref "AWS::StackName"
 
   Gateway:
     Type: AWS::EC2::InternetGateway
@@ -28,77 +51,82 @@ Resources:
 
   GatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn: Gateway
     Properties:
       InternetGatewayId: !Ref Gateway
-      VpcId: !Ref Vpc
+      VpcId: !Ref VPC
 
-  Subnet0:
+  EIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !Sub '${EIP.AllocationId}'
+      SubnetId: !Ref Subnet0Public
+
+  Subnet0Public:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 0, !GetAZs [!Ref AWS::Region]]
-      CidrBlock: 10.0.1.0/24
-      VpcId: !Ref Vpc
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !FindInMap [ SubnetConfig, "Subnet0", "CIDR" ]
+      VpcId: !Ref VPC
 
-  Subnet1:
+  Subnet1Private:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 1, !GetAZs [!Ref AWS::Region ]]
-      CidrBlock: 10.0.2.0/24
-      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !FindInMap [ SubnetConfig, "Subnet1", "CIDR" ]
+      VpcId: !Ref VPC
 
-  Subnet2:
+  Subnet2Private:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 2, !GetAZs ['!Ref AWS::Region)']]
-      CidrBlock: 10.0.3.0/24
-      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !FindInMap [ SubnetConfig, "Subnet2", "CIDR" ]
+      VpcId: !Ref VPC
 
-  Routes:
+  RoutesPublic:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref Vpc
+      VpcId: !Ref VPC
 
-  RouteDefault:
+  RoutesPrivate:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  DefaultGatewayRoute:
     Type: AWS::EC2::Route
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref Gateway
-      RouteTableId: !Ref Routes
+      RouteTableId: !Ref RoutesPublic
+
+  NatGatewayRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RoutesPrivate
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
 
   Subnet0Routes:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Subnet0
-      RouteTableId: !Ref Routes
+      SubnetId: !Ref Subnet0Public
+      RouteTableId: !Ref RoutesPublic
 
   Subnet1Routes:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Subnet1
-      RouteTableId: !Ref Routes
+      SubnetId: !Ref Subnet1Private
+      RouteTableId: !Ref RoutesPrivate
 
   Subnet2Routes:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Subnet2
-      RouteTableId: !Ref Routes
-
-  SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: VPC/EC2 Security Group
-      VpcId: !Ref Vpc
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-
-  SecurityGroupIngress:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: 0
-      ToPort: 65535
-      SourceSecurityGroupId: !Ref SecurityGroup
+      SubnetId: !Ref Subnet2Private
+      RouteTableId: !Ref RoutesPrivate

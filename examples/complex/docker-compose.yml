@@ -3,18 +3,19 @@ version: '2'
 services:
   rabbitmq:
     image: rabbitmq
+    mem_limit: 104857600
     expose:
       - "5672"
 
   authentication:
     image: "${ECR_REPOSITORY}/micros/authentication"
-    mem_limit: 100
+    mem_limit: 104857600
     expose:
       - "3113"
 
   login:
     image: "${ECR_REPOSITORY}/micros/login"
-    mem_limit: 100
+    mem_limit: 104857600
     expose:
       - "3116"
     depends_on:
@@ -23,7 +24,7 @@ services:
 
   mailer:
     image: "${ECR_REPOSITORY}/micros/mailer"
-    mem_limit: 100
+    mem_limit: 104857600
     environment:
       - C_FORCE_ROOT=1
       - BROKER_URL=amqp://xxx/
@@ -35,7 +36,7 @@ services:
 
   mailer_worker:
     image: "${ECR_REPOSITORY}/micros/mailer"
-    mem_limit: 100
+    mem_limit: 104857600
     environment:
       - BROKER_URL=amqp://xxx/
       - CONFIG=config/production.ini
@@ -45,7 +46,7 @@ services:
 
   pwreset:
     image: "${ECR_REPOSITORY}/micros/pwreset"
-    mem_limit: 100
+    mem_limit: 104857600
     environment:
       - "SQLA_URL=${DATABASE_URL}"
     expose:
@@ -56,7 +57,7 @@ services:
 
   user:
     image: "${ECR_REPOSITORY}/micros/user"
-    mem_limit: 100
+    mem_limit: 104857600
     environment:
       - "SQLA_URL=${DATABASE_URL}"
     expose:
@@ -64,7 +65,7 @@ services:
 
   app:
     image: "${ECR_REPOSITORY}/myrepo/app"
-    mem_limit: 256
+    mem_limit: 104857600
     ports:
       - "6543:6543"
     depends_on:
@@ -74,12 +75,6 @@ services:
       - mailer_worker
       - pwreset
       - user
-    logging:
-      driver: awslogs
-      options:
-        awslogs-group: awslogs-test
-        awslogs-region: us-west-2
-        awslogs-stream-prefix: app
 
 networks:
   default:
