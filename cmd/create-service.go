@@ -111,12 +111,15 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 
 		ctx := api.CreateStackContext{
 			Params: map[string]string{
-				"NetworkStack":     network.StackName,
-				"ECSCluster":       cluster,
-				"ECSSecurityGroup": clusterOutput["SecurityGroup"],
-				"TaskFamily":       *resp.TaskDefinition.Family,
-				"TaskDefinition":   *resp.TaskDefinition.TaskDefinitionArn,
-				"SSLCertificateId": certificateID,
+				"VpcId":               network.VpcId,
+				"VpcPublicSubnetId":   network.Subnet0Public,
+				"VpcPrivateSubnet1Id": network.Subnet1Private,
+				"VpcPrivateSubnet2Id": network.Subnet2Private,
+				"ECSCluster":          cluster,
+				"ECSSecurityGroup":    clusterOutput["SecurityGroup"],
+				"TaskFamily":          *resp.TaskDefinition.Family,
+				"TaskDefinition":      *resp.TaskDefinition.TaskDefinitionArn,
+				"SSLCertificateId":    certificateID,
 			},
 			DisableRollback: disableRollback,
 		}

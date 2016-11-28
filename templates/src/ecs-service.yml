@@ -4,7 +4,7 @@ Description: 'ECS Service: A Service, a Task Definition and an ELB'
 
 Parameters:
   VpcId:
-    Type: WS::EC2::VPC::Id
+    Type: AWS::EC2::VPC::Id
     Description: The identifier of VPC to run in
 
   VpcPublicSubnetId:
@@ -23,7 +23,7 @@ Parameters:
     Type: String
     Description: The ECS cluster to attach the service to
 
-  ECSInstanceSecurityGroup:
+  ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup::Id
     Description: A security group that can access ECS instances
 
@@ -111,7 +111,7 @@ Resources:
         - !Ref VpcPublicSubnetId
       SecurityGroups:
         - !Ref ELBSecurityGroup
-        - !Ref ECSInstanceSecurityGroup
+        - !Ref ECSSecurityGroup
       Listeners:
         - LoadBalancerPort: !Ref ELBPort
           InstancePort: !Ref ContainerPort
@@ -134,7 +134,7 @@ Resources:
         - !Ref VpcPublicSubnetId
       SecurityGroups:
         - !Ref ELBSecurityGroup
-        - !Ref ECSInstanceSecurityGroup
+        - !Ref ECSSecurityGroup
       Listeners:
         - LoadBalancerPort: !Ref ELBPort
           InstancePort: !Ref ContainerPort
