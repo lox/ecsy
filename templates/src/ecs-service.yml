@@ -74,6 +74,9 @@ Outputs:
   StackType:
     Value: "ecs-former::ecs-service"
 
+  ECSCluster:
+    Value: !Ref ECSCluster
+
   ECSLoadBalancer:
     Value: !If [
         "UseHttpsListener",
