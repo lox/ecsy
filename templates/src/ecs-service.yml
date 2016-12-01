@@ -111,7 +111,8 @@ Resources:
     Condition: UseHttpListener
     Properties:
       Subnets:
-        - !Ref VpcPublicSubnetId
+        - !Ref VpcPrivateSubnet1Id
+        - !Ref VpcPrivateSubnet2Id
       SecurityGroups:
         - !Ref ELBSecurityGroup
         - !Ref ECSSecurityGroup
@@ -134,7 +135,8 @@ Resources:
     Condition: UseHttpsListener
     Properties:
       Subnets:
-        - !Ref VpcPublicSubnetId
+        - !Ref VpcPrivateSubnet1Id
+        - !Ref VpcPrivateSubnet2Id
       SecurityGroups:
         - !Ref ELBSecurityGroup
         - !Ref ECSSecurityGroup
