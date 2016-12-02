@@ -7,17 +7,13 @@ Parameters:
     Type: AWS::EC2::VPC::Id
     Description: The identifier of VPC to run in
 
-  VpcPublicSubnetId:
+  VpcPublicSubnet1Id:
     Type: AWS::EC2::Subnet::Id
-    Description: The public subnet in the VPC specified with VpcId
+    Description: The first public subnet in the VPC specified with VpcId
 
-  VpcPrivateSubnet1Id:
+  VpcPublicSubnet2Id:
     Type: AWS::EC2::Subnet::Id
-    Description: The first private subnet in the specified with VpcId
-
-  VpcPrivateSubnet2Id:
-    Type: AWS::EC2::Subnet::Id
-    Description: The second private subnet in the specified with VpcId
+    Description: The second public subnet in the VPC specified with VpcId
 
   ECSCluster:
     Type: String
@@ -111,8 +107,8 @@ Resources:
     Condition: UseHttpListener
     Properties:
       Subnets:
-        - !Ref VpcPrivateSubnet1Id
-        - !Ref VpcPrivateSubnet2Id
+        - !Ref VpcPublicSubnet1Id
+        - !Ref VpcPublicSubnet2Id
       SecurityGroups:
         - !Ref ELBSecurityGroup
         - !Ref ECSSecurityGroup
@@ -135,8 +131,8 @@ Resources:
     Condition: UseHttpsListener
     Properties:
       Subnets:
-        - !Ref VpcPrivateSubnet1Id
-        - !Ref VpcPrivateSubnet2Id
+        - !Ref VpcPublicSubnet1Id
+        - !Ref VpcPublicSubnet2Id
       SecurityGroups:
         - !Ref ELBSecurityGroup
         - !Ref ECSSecurityGroup

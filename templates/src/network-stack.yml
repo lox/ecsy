@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS VPC Network: one public subnet and two private subnets, across two AZs.'
+Description: 'ECS VPC Network: two public, two private subnets, across two AZs.'
 
 Mappings:
   SubnetConfig:
@@ -8,6 +8,7 @@ Mappings:
     Subnet0: { CIDR: 10.0.2.0/24 }
     Subnet1: { CIDR: 10.0.3.0/24 }
     Subnet2: { CIDR: 10.0.4.0/24 }
+    Subnet3: { CIDR: 10.0.5.0/24 }
 
 Outputs:
   VpcId:
@@ -21,17 +22,23 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-Subnet0Public'
 
-  Subnet1Private:
-    Description: 'Subnet1 private.'
-    Value: !Ref Subnet1Private
+  Subnet1Public:
+    Description: 'Subnet1 public.'
+    Value: !Ref Subnet1Public
     Export:
-      Name: !Sub '${AWS::StackName}-Subnet1Private'
+      Name: !Sub '${AWS::StackName}-Subnet1Public'
 
   Subnet2Private:
     Description: 'Subnet2 private.'
     Value: !Ref Subnet2Private
     Export:
       Name: !Sub '${AWS::StackName}-Subnet2Private'
+
+  Subnet3Private:
+    Description: 'Subnet3 private.'
+    Value: !Ref Subnet3Private
+    Export:
+      Name: !Sub '${AWS::StackName}-Subnet3Private'
 
 Resources:
   VPC:
@@ -75,18 +82,26 @@ Resources:
       CidrBlock: !FindInMap [ SubnetConfig, "Subnet0", "CIDR" ]
       VpcId: !Ref VPC
 
-  Subnet1Private:
+  Subnet1Public:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
       CidrBlock: !FindInMap [ SubnetConfig, "Subnet1", "CIDR" ]
       VpcId: !Ref VPC
 
   Subnet2Private:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
       CidrBlock: !FindInMap [ SubnetConfig, "Subnet2", "CIDR" ]
+      VpcId: !Ref VPC
+
+  Subnet3Private:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !FindInMap [ SubnetConfig, "Subnet3", "CIDR" ]
       VpcId: !Ref VPC
 
   RoutesPublic:
@@ -122,11 +137,17 @@ Resources:
   Subnet1Routes:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Subnet1Private
-      RouteTableId: !Ref RoutesPrivate
+      SubnetId: !Ref Subnet1Public
+      RouteTableId: !Ref RoutesPublic
 
   Subnet2Routes:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref Subnet2Private
+      RouteTableId: !Ref RoutesPrivate
+
+  Subnet3Routes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet3Private
       RouteTableId: !Ref RoutesPrivate

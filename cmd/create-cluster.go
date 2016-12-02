@@ -78,9 +78,8 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 		ctx := api.CreateStackContext{
 			Params: map[string]string{
 				"VpcId":               network.VpcId,
-				"VpcPublicSubnetId":   network.Subnet0Public,
-				"VpcPrivateSubnet1Id": network.Subnet1Private,
-				"VpcPrivateSubnet2Id": network.Subnet2Private,
+				"VpcPrivateSubnet1Id": network.Subnet2Private,
+				"VpcPrivateSubnet2Id": network.Subnet3Private,
 				"KeyName":             keyName,
 				"ECSCluster":          cluster,
 				"InstanceType":        instanceType,
