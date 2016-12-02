@@ -181,7 +181,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 14
-      LogGroupName: !Join ['-', [ECSLogGroup, !Ref 'AWS::StackName']]
+      LogGroupName: !Ref 'AWS::StackName'
 
   ECSAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup

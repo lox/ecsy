@@ -17,6 +17,10 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
+func serviceStackName(cluster, taskFamily string) string {
+	return fmt.Sprintf("ecs-%s-%s-service", cluster, taskFamily)
+}
+
 func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 	var cluster, projectName, healthCheck, certificateID string
 	var composeFiles []string
@@ -140,7 +144,7 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		}
 
 		timer := time.Now()
-		stackName := cluster + "-ecs-service-" + time.Now().Format(stackDateFormat)
+		stackName := serviceStackName(cluster, *resp.TaskDefinition.Family)
 
 		log.Printf("Creating service cloudformation stack %s", stackName)
 

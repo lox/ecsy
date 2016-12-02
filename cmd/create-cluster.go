@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -16,6 +17,10 @@ import (
 const (
 	stackDateFormat = "20060102-150405"
 )
+
+func clusterStackName(cluster string) string {
+	return fmt.Sprintf("ecs-%s-cluster", cluster)
+}
 
 func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 	var cluster, keyName, instanceType, dockerUsername, dockerPassword, dockerEmail, authorizedKeys string
@@ -72,7 +77,7 @@ func ConfigureCreateCluster(app *kingpin.Application, svc api.Services) {
 		}
 
 		timer := time.Now()
-		stackName := cluster + "-ecs-" + time.Now().Format(stackDateFormat)
+		stackName := clusterStackName(cluster)
 		log.Printf("Creating cloudformation stack %s", stackName)
 
 		ctx := api.CreateStackContext{
