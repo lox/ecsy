@@ -32,6 +32,7 @@ func run(args []string, exit func(code int)) {
 	cmd.ConfigureDeploy(app, api.DefaultServices)
 	cmd.ConfigureDumpTaskDefinition(app, api.DefaultServices)
 	cmd.ConfigureLogs(app, api.DefaultServices)
+	cmd.ConfigureRunTask(app, api.DefaultServices)
 
 	kingpin.MustParse(app.Parse(args))
 }
