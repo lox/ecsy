@@ -3,4 +3,4 @@ steps:
     command: scripts/test.sh
     plugins:
       docker-compose:
-        run: golang
+        run: test

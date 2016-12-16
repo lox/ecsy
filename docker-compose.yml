@@ -1,8 +1,9 @@
 version: '2'
 
 services:
-  golang:
+  test:
     image: golang
-    working_dir: /ecsy
+    working_dir: /go/src/github.com/lox/ecsy
+    command: scripts/test.sh
     volumes:
-      - ".:/ecsy"
+      - ".:/go/src/github.com/lox/ecsy"
