@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-make build
+make setup build
 
 # Make sure nothing is around before we start.
 echo "--- Delete any existing clusters"
