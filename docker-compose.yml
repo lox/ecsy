@@ -3,3 +3,6 @@ version: '2'
 services:
   golang:
     image: golang
+    working_dir: /ecsy
+    volumes:
+      - ".:/ecsy"
