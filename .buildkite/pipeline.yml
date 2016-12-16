@@ -1,0 +1,3 @@
+steps:
+  - name: ":hammer: :aws:"
+    command: "scripts/test.sh"
