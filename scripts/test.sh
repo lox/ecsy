@@ -13,6 +13,9 @@ echo "--- :aws: Create cluster"
 echo "--- :aws: Create service"
 ./ecsy create-service --cluster=ecsy-test -p app -f ./examples/helloworld/docker-compose.yml
 
+echo "--- :aws: Running once-off task"
+./ecsy --cluster=ecsy-test -f examples/helloworld/docker-compose.yml -s sample -- echo hello world
+
 echo "--- :aws: Deploy update"
 ./ecsy deploy --cluster=ecsy-test -p app -f ./examples/helloworld/docker-compose.yml
 
