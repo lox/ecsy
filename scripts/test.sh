@@ -1,23 +1,20 @@
 #!/bin/bash
 set -euo pipefail
 
-make build
+make setup build
 
 # Make sure nothing is around before we start.
-echo "--- Delete any existing clusters"
+echo "~~~ :aws: Delete any existing clusters"
 ./ecsy delete-cluster --cluster=ecsy-test
 
-echo "--- Create cluster"
+echo "--- :aws: Create cluster"
 ./ecsy create-cluster --cluster=ecsy-test --count=2 --type t2.nano --keyname "${KEYNAME:-default}"
 
-echo "--- Create service"
+echo "--- :aws: Create service"
 ./ecsy create-service --cluster=ecsy-test -p app -f ./examples/helloworld/docker-compose.yml
 
-echo "--- Deploy update"
+echo "--- :aws: Deploy update"
 ./ecsy deploy --cluster=ecsy-test -p app -f ./examples/helloworld/docker-compose.yml
 
-echo "--- Delete cluster"
+echo "--- :aws: Delete cluster"
 ./ecsy delete-cluster --cluster=ecsy-test
-
-echo "--- Delete network"
-./ecsy delete-network --cluster=ecsy-test

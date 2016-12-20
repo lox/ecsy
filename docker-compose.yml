@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  test:
+    image: golang
+    working_dir: /go/src/github.com/lox/ecsy
+    command: scripts/test.sh
+    environment:
+      - AWS_DEFAULT_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+    volumes:
+      - ".:/go/src/github.com/lox/ecsy"
