@@ -18,6 +18,3 @@ echo "--- Deploy update"
 
 echo "--- Delete cluster"
 ./ecsy delete-cluster --cluster=ecsy-test
-
-echo "--- Delete network"
-./ecsy delete-network --cluster=ecsy-test
