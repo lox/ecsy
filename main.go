@@ -28,10 +28,11 @@ func run(args []string, exit func(code int)) {
 	cmd.ConfigureCreateCluster(app, api.DefaultServices)
 	cmd.ConfigureDeleteCluster(app, api.DefaultServices)
 	cmd.ConfigureCreateService(app, api.DefaultServices)
-	cmd.ConfigurePoll(app, api.DefaultServices)
+	cmd.ConfigurePollStack(app, api.DefaultServices)
 	cmd.ConfigureDeploy(app, api.DefaultServices)
 	cmd.ConfigureDumpTaskDefinition(app, api.DefaultServices)
 	cmd.ConfigureLogs(app, api.DefaultServices)
+	cmd.ConfigureRunTask(app, api.DefaultServices)
 
 	kingpin.MustParse(app.Parse(args))
 }

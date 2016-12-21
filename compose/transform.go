@@ -3,6 +3,7 @@ package compose
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 type Transformer struct {
 	ComposeFiles      []string
 	ProjectName       string
+	Services          []string
 	EnvironmentLookup config.EnvironmentLookup
 }
 
@@ -42,6 +44,11 @@ func (t *Transformer) Transform() (*ecs.RegisterTaskDefinitionInput, error) {
 	}
 
 	for _, name := range p.(*project.Project).ServiceConfigs.Keys() {
+		if !isServiceIncluded(name, t.Services) {
+			log.Printf("Skipping service %s", name)
+			continue
+		}
+
 		config, _ := p.GetServiceConfig(name)
 		var def = ecs.ContainerDefinition{
 			Name: aws.String(name),
@@ -297,6 +304,18 @@ func (t *Transformer) Transform() (*ecs.RegisterTaskDefinitionInput, error) {
 	}
 
 	return &task, nil
+}
+
+func isServiceIncluded(name string, included []string) bool {
+	if len(included) == 0 {
+		return true
+	}
+	for _, val := range included {
+		if name == val {
+			return true
+		}
+	}
+	return false
 }
 
 type envMap map[string][]string

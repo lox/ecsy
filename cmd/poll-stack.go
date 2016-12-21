@@ -8,10 +8,12 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func ConfigurePoll(app *kingpin.Application, svc api.Services) {
+func ConfigurePollStack(app *kingpin.Application, svc api.Services) {
 	var stackName string
 
-	cmd := app.Command("poll", "Poll a cloudformation stack until it's complete")
+	cmd := app.Command("poll-stack", "Poll a cloudformation stack until it's complete")
+	cmd.Alias("poll")
+
 	cmd.Flag("stack", "The name of the cloudformation stack to poll").
 		Required().
 		StringVar(&stackName)

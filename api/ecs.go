@@ -18,6 +18,9 @@ type ecsInterface interface {
 	CreateCluster(*ecs.CreateClusterInput) (*ecs.CreateClusterOutput, error)
 	RegisterTaskDefinition(*ecs.RegisterTaskDefinitionInput) (*ecs.RegisterTaskDefinitionOutput, error)
 	UpdateService(*ecs.UpdateServiceInput) (*ecs.UpdateServiceOutput, error)
+	RunTask(input *ecs.RunTaskInput) (*ecs.RunTaskOutput, error)
+	DescribeTasks(input *ecs.DescribeTasksInput) (*ecs.DescribeTasksOutput, error)
+	WaitUntilTasksStopped(input *ecs.DescribeTasksInput) error
 }
 
 func UpdateContainerImages(defs []*ecs.ContainerDefinition, images map[string]string) error {
