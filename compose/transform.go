@@ -320,7 +320,7 @@ func isServiceIncluded(name string, included []string) bool {
 
 type envMap map[string][]string
 
-func (em envMap) Lookup(key, serviceName string, config *config.ServiceConfig) []string {
+func (em envMap) Lookup(key string, config *config.ServiceConfig) []string {
 	results := []string{}
 	for _, val := range em[key] {
 		results = append(results, key+"="+val)

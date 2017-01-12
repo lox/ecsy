@@ -86,6 +86,21 @@ type ImageDelete struct {
 	Deleted  string `json:",omitempty"`
 }
 
+// Image contains response of Remote API:
+// GET "/images/json"
+type Image struct {
+	ID          string `json:"Id"`
+	ParentID    string `json:"ParentId"`
+	RepoTags    []string
+	RepoDigests []string
+	Created     int64
+	Size        int64
+	SharedSize  int64
+	VirtualSize int64
+	Labels      map[string]string
+	Containers  int64
+}
+
 // GraphDriverData returns Image's graph driver config info
 // when calling inspect command
 type GraphDriverData struct {
@@ -121,6 +136,15 @@ type ImageInspect struct {
 	VirtualSize     int64
 	GraphDriver     GraphDriverData
 	RootFS          RootFS
+}
+
+// Port stores open ports info of container
+// e.g. {"PrivatePort": 8080, "PublicPort": 80, "Type": "tcp"}
+type Port struct {
+	IP          string `json:",omitempty"`
+	PrivatePort int
+	PublicPort  int `json:",omitempty"`
+	Type        string
 }
 
 // Container contains response of Remote API:
@@ -409,6 +433,23 @@ type MountPoint struct {
 	Propagation mount.Propagation
 }
 
+// VolumeUsageData holds information regarding the volume usage
+type VolumeUsageData struct {
+	Size     int64 // Size holds how much disk space is used by the (local driver only). Sets to -1 if not provided.
+	RefCount int   // RefCount holds the number of containers having this volume attached to them. Sets to -1 if not provided.
+}
+
+// Volume represents the configuration of a volume for the remote API
+type Volume struct {
+	Name       string                 // Name is the name of the volume
+	Driver     string                 // Driver is the Driver name used to create the volume
+	Mountpoint string                 // Mountpoint is the location on disk of the volume
+	Status     map[string]interface{} `json:",omitempty"` // Status provides low-level status information about the volume
+	Labels     map[string]string      // Labels is metadata specific to the volume
+	Scope      string                 // Scope describes the level at which the volume exists (e.g. `global` for cluster-wide or `local` for machine level)
+	UsageData  *VolumeUsageData       `json:",omitempty"`
+}
+
 // VolumesListResponse contains the response for the remote API:
 // GET "/volumes"
 type VolumesListResponse struct {
@@ -429,7 +470,6 @@ type VolumeCreateRequest struct {
 type NetworkResource struct {
 	Name       string                      // Name is the requested name of the network
 	ID         string                      `json:"Id"` // ID uniquely identifies a network on a single machine
-	Created    time.Time                   // Created is the time the network created
 	Scope      string                      // Scope describes the level at which the network exists (e.g. `global` for cluster-wide or `local` for machine level)
 	Driver     string                      // Driver is the Driver name used to create the network (e.g. `bridge`, `overlay`)
 	EnableIPv6 bool                        // EnableIPv6 represents whether to enable IPv6
@@ -501,7 +541,7 @@ type Runtime struct {
 // GET "/system/df"
 type DiskUsage struct {
 	LayersSize int64
-	Images     []*ImageSummary
+	Images     []*Image
 	Containers []*Container
 	Volumes    []*Volume
 }

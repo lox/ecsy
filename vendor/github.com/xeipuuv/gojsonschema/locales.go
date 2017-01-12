@@ -37,7 +37,6 @@ type (
 		MissingDependency() string
 		Internal() string
 		Enum() string
-		ArrayNotEnoughItems() string
 		ArrayNoAdditionalItems() string
 		ArrayMinItems() string
 		ArrayMaxItems() string
@@ -121,10 +120,6 @@ func (l DefaultLocale) Enum() string {
 
 func (l DefaultLocale) ArrayNoAdditionalItems() string {
 	return `No additional items allowed on array`
-}
-
-func (l DefaultLocale) ArrayNotEnoughItems() string {
-	return `Not enough items on array to match positional list of schema`
 }
 
 func (l DefaultLocale) ArrayMinItems() string {

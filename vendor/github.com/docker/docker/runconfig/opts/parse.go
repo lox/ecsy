@@ -94,7 +94,6 @@ type ContainerOptions struct {
 	cgroupParent      string
 	volumeDriver      string
 	stopSignal        string
-	stopTimeout       int
 	isolation         string
 	shmSize           string
 	noHealthcheck     bool
@@ -162,7 +161,6 @@ func AddFlags(flags *pflag.FlagSet) *ContainerOptions {
 	flags.BoolVar(&copts.readonlyRootfs, "read-only", false, "Mount the container's root filesystem as read only")
 	flags.StringVar(&copts.restartPolicy, "restart", "no", "Restart policy to apply when a container exits")
 	flags.StringVar(&copts.stopSignal, "stop-signal", signal.DefaultStopSignal, fmt.Sprintf("Signal to stop a container, %v by default", signal.DefaultStopSignal))
-	flags.IntVar(&copts.stopTimeout, "stop-timeout", 0, "Timeout (in seconds) to stop a container")
 	flags.Var(copts.sysctls, "sysctl", "Sysctl options")
 	flags.BoolVarP(&copts.tty, "tty", "t", false, "Allocate a pseudo-TTY")
 	flags.Var(copts.ulimits, "ulimit", "Ulimit options")
@@ -560,9 +558,6 @@ func Parse(flags *pflag.FlagSet, copts *ContainerOptions) (*container.Config, *c
 	if flags.Changed("stop-signal") {
 		config.StopSignal = copts.stopSignal
 	}
-	if flags.Changed("stop-timeout") {
-		config.StopTimeout = &copts.stopTimeout
-	}
 
 	hostConfig := &container.HostConfig{
 		Binds:           binds,
@@ -702,7 +697,7 @@ func parseSecurityOpts(securityOpts []string) ([]string, error) {
 	for key, opt := range securityOpts {
 		con := strings.SplitN(opt, "=", 2)
 		if len(con) == 1 && con[0] != "no-new-privileges" {
-			if strings.Contains(opt, ":") {
+			if strings.Index(opt, ":") != -1 {
 				con = strings.SplitN(opt, ":", 2)
 			} else {
 				return securityOpts, fmt.Errorf("Invalid --security-opt: %q", opt)
