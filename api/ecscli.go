@@ -20,13 +20,16 @@ func FindClusterStack(svc cfnInterface, clusterName string) (*cloudformation.Sta
 		"StackType":  "ecs-former::ecs-stack",
 		"ECSCluster": clusterName,
 	})
+	if err != nil {
+		return nil, err
+	}
 	if len(clusterStacks) == 0 {
 		return nil, fmt.Errorf(
 			"Failed to find a cloudformation stack for cluster %q",
 			clusterName,
 		)
 	}
-	return clusterStacks[0], err
+	return clusterStacks[0], nil
 }
 
 func FindServiceStack(svc cfnInterface, clusterName, taskFamily string) (*cloudformation.Stack, error) {
@@ -35,14 +38,17 @@ func FindServiceStack(svc cfnInterface, clusterName, taskFamily string) (*cloudf
 		"ECSCluster": clusterName,
 		"TaskFamily": taskFamily,
 	})
+	if err != nil {
+		return nil, err
+	}
 	if len(serviceStacks) == 0 {
 		return nil, fmt.Errorf(
-			"Failed to find a cloudformation stack for task %q, cluster %q",
+			"Failed to find a cloudformation stack matching task %q, cluster %q",
 			taskFamily,
 			clusterName,
 		)
 	}
-	return serviceStacks[0], err
+	return serviceStacks[0], nil
 }
 
 func FindNetworkStack(svc cfnInterface, clusterName string) (NetworkOutputs, error) {
