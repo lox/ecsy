@@ -54,7 +54,9 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 		}
 
 		clusterStack, err := api.FindClusterStack(svc.Cloudformation, cluster)
-		if clusterStack == nil {
+		if err != nil {
+			return err
+		} else if clusterStack == nil {
 			return fmt.Errorf("No cluster exists for %q. Use `create-cluster`",
 				cluster)
 		}

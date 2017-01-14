@@ -50,6 +50,9 @@ func ConfigureRunTask(app *kingpin.Application, svc api.Services) {
 		log.Printf("Creating task %s on %s", taskName, cluster)
 
 		clusterStack, err := api.FindClusterStack(svc.Cloudformation, cluster)
+		if err != nil {
+			return err
+		}
 		if clusterStack == nil {
 			return fmt.Errorf("No cluster exists for %q. Use `create-cluster`",
 				cluster)

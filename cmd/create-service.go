@@ -56,6 +56,9 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		log.Printf("Creating service %s on %s", projectName, cluster)
 
 		clusterStack, err := api.FindClusterStack(svc.Cloudformation, cluster)
+		if err != nil {
+			return err
+		}
 		if clusterStack == nil {
 			return fmt.Errorf("No cluster exists for %q. Use `create-cluster`",
 				cluster)
