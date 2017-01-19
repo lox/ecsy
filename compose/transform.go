@@ -75,6 +75,10 @@ func (t *Transformer) Transform() (*ecs.RegisterTaskDefinitionInput, error) {
 			def.Memory = aws.Int64(int64(config.MemLimit / 1024 / 1024))
 		}
 
+		if config.MemReservation > 0 {
+			def.MemoryReservation = aws.Int64(int64(config.MemReservation / 1024 / 1024))
+		}
+
 		if config.Privileged {
 			def.Privileged = aws.Bool(config.Privileged)
 		}
