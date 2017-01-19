@@ -26,3 +26,13 @@ validate:
 
 clean:
 	rm templates/static.go
+
+release:
+	equinox release \
+		--version=$(VERSION) \
+		--platforms='darwin_amd64 linux_amd64' \
+		--signing-key=$(EQUINOX_KEY) \
+		--app=app_3dH3rVQXD5e \
+		--token=$(EQUINOX_TOKEN) \
+		-- -ldflags='-X main.Version=$(VERSION) -s -w' \
+		$(PREFIX)
