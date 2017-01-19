@@ -735,6 +735,13 @@
 			"revisionTime": "2017-01-10T13:24:56Z"
 		},
 		{
+			"checksumSHA1": "EMYgEVIGJfff8f6HxycPntmmpPg=",
+			"origin": "github.com/lox/libcompose",
+			"path": "github.com/docker/libcompose",
+			"revision": "f12d14623f73a0ca0d7fc37253a99165ae48d39f",
+			"revisionTime": "2017-01-18T01:04:15Z"
+		},
+		{
 			"checksumSHA1": "l2gJ/1tMH1zNWhLErEYzxHoqQhM=",
 			"path": "github.com/docker/libcompose/config",
 			"revision": "7c59e343cd9d1f3f5577b5bfb71f6486beb4c006",
