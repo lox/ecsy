@@ -112,6 +112,32 @@ func PollUntilTaskDeployed(svc ecsInterface, cluster string, service string, tas
 	}
 }
 
+func PollUntilServiceStable(svc ecsInterface, cluster string, service string, f func(e *ecs.ServiceEvent)) error {
+	lastSeen := time.Now().Add(-1 * time.Minute)
+	stableMsg := fmt.Sprintf("service %s has reached a steady state.", service)
+
+	for {
+		service, err := getService(svc, cluster, service)
+		if err != nil {
+			return err
+		}
+
+		for i := len(service.Events) - 1; i >= 0; i-- {
+			event := service.Events[i]
+			if event.CreatedAt.After(lastSeen) {
+				f(event)
+				lastSeen = *event.CreatedAt
+			}
+
+			if *event.Message == stableMsg {
+				return nil
+			}
+		}
+
+		time.Sleep(ECS_POLL_INTERVAL)
+	}
+}
+
 func ExposedPorts(taskDef *ecs.TaskDefinition) map[string][]*ecs.PortMapping {
 	mappings := map[string][]*ecs.PortMapping{}
 

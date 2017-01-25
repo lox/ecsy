@@ -11,12 +11,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/lox/ecsy/api"
 	"github.com/lox/ecsy/compose"
-	"gopkg.in/alecthomas/kingpin.v2"
+
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 	var cluster, projectName, imageTags string
 	var composeFiles []string
+	var waitForStableService bool
 
 	cmd := app.Command("deploy", "Deploy updated task definitions to ECS")
 	cmd.Flag("cluster", "The ECS cluster to deploy to").
@@ -32,6 +34,9 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 		Short('f').
 		Default("docker-compose.yml").
 		ExistingFilesVar(&composeFiles)
+
+	cmd.Flag("wait-stable", "Wait until the service reports it is stable").
+		BoolVar(&waitForStableService)
 
 	cmd.Arg("imagetags", "Tags in the form image=tag to apply to the task").
 		StringVar(&imageTags)
@@ -113,16 +118,18 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 			log.Println(*e.Message)
 		}
 
-		log.Printf("Waiting for service to reach a steady state.")
+		log.Printf("Waiting for task to be deployed")
 		err = api.PollUntilTaskDeployed(svc.ECS, outputs["ECSCluster"], outputs["ECSService"], *resp.TaskDefinition.TaskDefinitionArn, printer)
 		if err != nil {
 			return err
 		}
 
-		// ui.Printf("Waiting for service to stabilize")
-		// if err = apient.WaitUntilServicesStable(input.ClusterName, serviceOutputs["ECSService"]); err != nil {
-		// 	ui.Fatal(err)
-		// }
+		if waitForStableService {
+			log.Printf("Waiting for service to stabilize")
+			if err = api.PollUntilServiceStable(svc.ECS, outputs["ECSCluster"], outputs["ECSService"], printer); err != nil {
+				log.Fatal(err)
+			}
+		}
 
 		log.Printf("Deployed in %s", time.Now().Sub(timer).String())
 		return nil
