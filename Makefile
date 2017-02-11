@@ -9,8 +9,8 @@ test:
 	govendor test +local
 
 setup:
-	go get github.com/kardianos/govendor
-	go get github.com/mjibson/esc
+	go get -u github.com/kardianos/govendor
+	go get -u github.com/mjibson/esc
 
 build: templates
 	go build -ldflags="$(FLAGS)" $(PREFIX)
