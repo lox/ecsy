@@ -40,6 +40,20 @@ ecsy create-service --cluster example -f docker-compose.yml
 ecsy deploy --cluster example -f docker-compose.yml helloworld=:v2
 ```
 
+## Building
+
+Setup the build dependencies.
+
+```
+make setup
+```
+
+Install ecsy.
+
+```
+make install
+```
+
 ### Why not amazon-ecs-cli?
 
 The main issue with `amazon-ecs-cli` is that it tries to emulate the `docker-compose` interface, which isn't a sensible abstraction and ends up making the architecture overly complicated. Contributing the changes we wanted upstream just wasn't viable, and beyond that issues go unanswered and development seems stagnant:
