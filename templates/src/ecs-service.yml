@@ -1,192 +1,193 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS Service: A Service, a Task Definition and an ELB'
+Description: >
+    ECS Service: A Service and a Task Definition
 
 Parameters:
-  VpcId:
-    Type: AWS::EC2::VPC::Id
-    Description: The identifier of VPC to run in
+    VpcId:
+        Type: AWS::EC2::VPC::Id
+        Description: The identifier of VPC to run in
 
-  VpcPublicSubnet1Id:
-    Type: AWS::EC2::Subnet::Id
-    Description: The first public subnet in the VPC specified with VpcId
+    VpcPublicSubnet1Id:
+        Type: AWS::EC2::Subnet::Id
+        Description: The first public subnet in the VPC specified with VpcId
 
-  VpcPublicSubnet2Id:
-    Type: AWS::EC2::Subnet::Id
-    Description: The second public subnet in the VPC specified with VpcId
+    VpcPublicSubnet2Id:
+        Type: AWS::EC2::Subnet::Id
+        Description: The second public subnet in the VPC specified with VpcId
 
-  ECSCluster:
-    Type: String
-    Description: The ECS cluster to attach the service to
+    ECSCluster:
+        Type: String
+        Description: The ECS cluster to attach the service to
 
-  ECSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup::Id
-    Description: A security group that can access ECS instances
+    ECSSecurityGroup:
+        Type: AWS::EC2::SecurityGroup::Id
+        Description: A security group that can access ECS instances
 
-  TaskFamily:
-    Type: String
-    Description: The family name of the task in use
+    TaskFamily:
+        Type: String
+        Description: The family name of the task in use
 
-  TaskFamily:
-    Type: String
-    Description: The family name of the task in use
+    TaskFamily:
+        Type: String
+        Description: The family name of the task in use
 
-  TaskDefinition:
-    Type: String
-    Description: The identifier of the ECS TaskDefinition to use
+    TaskDefinition:
+        Type: String
+        Description: The identifier of the ECS TaskDefinition to use
 
-  ContainerName:
-    Type: String
-    Description: The container to attach to the service
+    ContainerName:
+        Type: String
+        Description: The container to attach to the service
 
-  ContainerPort:
-    Type: Number
-    Description: The port on the container to open
-    Default: 80
+    ContainerPort:
+        Type: Number
+        Description: The port on the container to open
+        Default: 80
 
-  ELBPort:
-    Type: Number
-    Description: The port on the load balancer to open
-    Default: 80
+    ELBPort:
+        Type: Number
+        Description: The port on the load balancer to open
+        Default: 80
 
-  HealthCheckUrl:
-    Type: String
-    Description: The URL to hit when doing healthchecks from the ELB
-    Default: /
+    HealthCheckUrl:
+        Type: String
+        Description: The URL to hit when doing healthchecks from the ELB
+        Default: /
 
-  SSLCertificateId:
-    Type: String
-    Description: An identifier of an SSL certificate to use for the ELB
-    Default: ""
+    SSLCertificateId:
+        Type: String
+        Description: An identifier of an SSL certificate to use for the ELB
+        Default: ""
 
 Conditions:
     UseHttpListener:
-      !Equals [ !Ref SSLCertificateId, "" ]
+        !Equals [ !Ref SSLCertificateId, "" ]
 
     UseHttpsListener:
-      !Not [ !Equals [ !Ref SSLCertificateId, "" ] ]
+        !Not [ !Equals [ !Ref SSLCertificateId, "" ] ]
 
 Outputs:
-  StackType:
-    Value: "ecs-former::ecs-service"
+    StackType:
+        Value: "ecs-former::ecs-service"
 
-  ECSCluster:
-    Value: !Ref ECSCluster
+    ECSCluster:
+        Value: !Ref ECSCluster
 
-  ECSLoadBalancer:
-    Value: !If [
-        "UseHttpsListener",
-        !Sub "https://${HTTPSLoadBalancer.DNSName}:${ELBPort}",
-        !Sub "http://${HTTPLoadBalancer.DNSName}:${ELBPort}"
-      ]
+    ECSLoadBalancer:
+        Value: !If [
+                "UseHttpsListener",
+                !Sub "https://${HTTPSLoadBalancer.DNSName}:${ELBPort}",
+                !Sub "http://${HTTPLoadBalancer.DNSName}:${ELBPort}"
+            ]
 
-  ECSService:
-    Value: !Ref ECSService
+    ECSService:
+        Value: !Ref ECSService
 
-  TaskFamily:
-    Value: !Ref TaskFamily
+    TaskFamily:
+        Value: !Ref TaskFamily
 
 Resources:
-  ELBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-       GroupDescription : Security group for ELB in front of ECS
-       VpcId : !Ref VpcId
-       SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: !Ref ELBPort
-          ToPort: !Ref ELBPort
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
+    ELBSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+             GroupDescription : Security group for ELB in front of ECS
+             VpcId : !Ref VpcId
+             SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: !Ref ELBPort
+                  ToPort: !Ref ELBPort
+                  CidrIp: 0.0.0.0/0
+                - IpProtocol: tcp
+                  FromPort: 443
+                  ToPort: 443
+                  CidrIp: 0.0.0.0/0
 
-  HTTPLoadBalancer:
-    Type: AWS::ElasticLoadBalancing::LoadBalancer
-    Condition: UseHttpListener
-    Properties:
-      Subnets:
-        - !Ref VpcPublicSubnet1Id
-        - !Ref VpcPublicSubnet2Id
-      SecurityGroups:
-        - !Ref ELBSecurityGroup
-        - !Ref ECSSecurityGroup
-      Listeners:
-        - LoadBalancerPort: !Ref ELBPort
-          InstancePort: !Ref ContainerPort
-          Protocol: HTTP
-      HealthCheck:
-        Target: !Sub "HTTP:${ContainerPort}${HealthCheckUrl}"
-        HealthyThreshold: 2
-        UnhealthyThreshold: 10
-        Interval: 30
-        Timeout: 5
-      ConnectionDrainingPolicy:
-        Enabled: true
-        Timeout: 60
+    HTTPLoadBalancer:
+        Type: AWS::ElasticLoadBalancing::LoadBalancer
+        Condition: UseHttpListener
+        Properties:
+            Subnets:
+                - !Ref VpcPublicSubnet1Id
+                - !Ref VpcPublicSubnet2Id
+            SecurityGroups:
+                - !Ref ELBSecurityGroup
+                - !Ref ECSSecurityGroup
+            Listeners:
+                - LoadBalancerPort: !Ref ELBPort
+                  InstancePort: !Ref ContainerPort
+                  Protocol: HTTP
+            HealthCheck:
+                Target: !Sub "HTTP:${ContainerPort}${HealthCheckUrl}"
+                HealthyThreshold: 2
+                UnhealthyThreshold: 10
+                Interval: 30
+                Timeout: 5
+            ConnectionDrainingPolicy:
+                Enabled: true
+                Timeout: 60
 
-  HTTPSLoadBalancer:
-    Type: AWS::ElasticLoadBalancing::LoadBalancer
-    Condition: UseHttpsListener
-    Properties:
-      Subnets:
-        - !Ref VpcPublicSubnet1Id
-        - !Ref VpcPublicSubnet2Id
-      SecurityGroups:
-        - !Ref ELBSecurityGroup
-        - !Ref ECSSecurityGroup
-      Listeners:
-        - LoadBalancerPort: !Ref ELBPort
-          InstancePort: !Ref ContainerPort
-          Protocol: HTTP
-        - LoadBalancerPort: 443
-          InstancePort: !Ref ContainerPort
-          Protocol: HTTPS
-          SSLCertificateId: !Ref SSLCertificateId
-      HealthCheck:
-        Target: !Sub "HTTP:${ContainerPort}${HealthCheckUrl}"
-        HealthyThreshold: 2
-        UnhealthyThreshold: 10
-        Interval: 30
-        Timeout: 5
-      ConnectionDrainingPolicy:
-        Enabled: true
-        Timeout: 60
+    HTTPSLoadBalancer:
+        Type: AWS::ElasticLoadBalancing::LoadBalancer
+        Condition: UseHttpsListener
+        Properties:
+            Subnets:
+                - !Ref VpcPublicSubnet1Id
+                - !Ref VpcPublicSubnet2Id
+            SecurityGroups:
+                - !Ref ELBSecurityGroup
+                - !Ref ECSSecurityGroup
+            Listeners:
+                - LoadBalancerPort: !Ref ELBPort
+                  InstancePort: !Ref ContainerPort
+                  Protocol: HTTP
+                - LoadBalancerPort: 443
+                  InstancePort: !Ref ContainerPort
+                  Protocol: HTTPS
+                  SSLCertificateId: !Ref SSLCertificateId
+            HealthCheck:
+                Target: !Sub "HTTP:${ContainerPort}${HealthCheckUrl}"
+                HealthyThreshold: 2
+                UnhealthyThreshold: 10
+                Interval: 30
+                Timeout: 5
+            ConnectionDrainingPolicy:
+                Enabled: true
+                Timeout: 60
 
-  ECSService:
-    Type: AWS::ECS::Service
-    Properties:
-      Cluster: !Ref ECSCluster
-      DesiredCount: 1
-      LoadBalancers:
-        - ContainerName: !Ref ContainerName
-          ContainerPort: !Ref ContainerPort
-          LoadBalancerName: !If [ "UseHttpsListener", !Ref HTTPSLoadBalancer, !Ref HTTPLoadBalancer ]
-      Role: !Ref ECSServiceRole
-      TaskDefinition: !Ref TaskDefinition
+    ECSService:
+        Type: AWS::ECS::Service
+        Properties:
+            Cluster: !Ref ECSCluster
+            DesiredCount: 1
+            LoadBalancers:
+                - ContainerName: !Ref ContainerName
+                  ContainerPort: !Ref ContainerPort
+                  LoadBalancerName: !If [ "UseHttpsListener", !Ref HTTPSLoadBalancer, !Ref HTTPLoadBalancer ]
+            Role: !Ref ECSServiceRole
+            TaskDefinition: !Ref TaskDefinition
 
-  ECSServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ecs.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: ecs-service
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - elasticloadbalancing:Describe*
-                  - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
-                  - elasticloadbalancing:RegisterInstancesWithLoadBalancer
-                  - ec2:Describe*
-                  - ec2:AuthorizeSecurityGroupIngress
-                Resource: "*"
+    ECSServiceRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                                - ecs.amazonaws.com
+                          Action:
+                                - sts:AssumeRole
+            Path: /
+            Policies:
+                - PolicyName: ecs-service
+                  PolicyDocument:
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - elasticloadbalancing:Describe*
+                                - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+                                - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+                                - ec2:Describe*
+                                - ec2:AuthorizeSecurityGroupIngress
+                            Resource: "*"
