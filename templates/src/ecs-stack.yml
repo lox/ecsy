@@ -3,315 +3,315 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS Cluster: autoscaling instances and an ECS Cluster.'
 
 Parameters:
-  VpcId:
-    Type: AWS::EC2::VPC::Id
-    Description: The identifier of VPC to run in
+    VpcId:
+        Type: AWS::EC2::VPC::Id
+        Description: The identifier of VPC to run in
 
-  VpcPrivateSubnet1Id:
-    Type: AWS::EC2::Subnet::Id
-    Description: The first private subnet in the specified with VpcId
+    VpcPrivateSubnet1Id:
+        Type: AWS::EC2::Subnet::Id
+        Description: The first private subnet in the specified with VpcId
 
-  VpcPrivateSubnet2Id:
-    Type: AWS::EC2::Subnet::Id
-    Description: The second private subnet in the specified with VpcId
+    VpcPrivateSubnet2Id:
+        Type: AWS::EC2::Subnet::Id
+        Description: The second private subnet in the specified with VpcId
 
-  KeyName:
-    Description: The ssh keypair used to access the ecs instances
-    Type: AWS::EC2::KeyPair::KeyName
+    KeyName:
+        Description: The ssh keypair used to access the ecs instances
+        Type: AWS::EC2::KeyPair::KeyName
 
-  AuthorizedUsersUrl:
-    Description: Optional - An url to periodically download ssh authorized_keys from
-    Type: String
-    Default: ""
+    AuthorizedUsersUrl:
+        Description: Optional - An url to periodically download ssh authorized_keys from
+        Type: String
+        Default: ""
 
-  InstanceType:
-    Description: The type of instance to use for the instances
-    Type: String
-    Default: t2.micro
-    AllowedValues:
-      - t2.nano
-      - t2.micro
-      - t2.small
-      - t2.medium
-      - t2.large
-      - m3.medium
-      - m3.large
-      - m3.xlarge
-      - m3.2xlarge
-      - m4.large
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
-      - m4.10xlarge
-      - c4.large
-      - c4.xlarge
-      - c4.2xlarge
-      - c4.4xlarge
-      - c4.8xlarge
-      - c3.large
-      - c3.xlarge
-      - c3.2xlarge
-      - c3.4xlarge
-      - c3.8xlarge
-      - r3.large
-      - r3.xlarge
-      - r3.2xlarge
-      - r3.4xlarge
-      - r3.8xlarge
-      - i2.xlarge
-      - i2.2xlarge
-      - i2.4xlarge
-      - i2.8xlarge
+    InstanceType:
+        Description: The type of instance to use for the instances
+        Type: String
+        Default: t2.micro
+        AllowedValues:
+            - t2.nano
+            - t2.micro
+            - t2.small
+            - t2.medium
+            - t2.large
+            - m3.medium
+            - m3.large
+            - m3.xlarge
+            - m3.2xlarge
+            - m4.large
+            - m4.xlarge
+            - m4.2xlarge
+            - m4.4xlarge
+            - m4.10xlarge
+            - c4.large
+            - c4.xlarge
+            - c4.2xlarge
+            - c4.4xlarge
+            - c4.8xlarge
+            - c3.large
+            - c3.xlarge
+            - c3.2xlarge
+            - c3.4xlarge
+            - c3.8xlarge
+            - r3.large
+            - r3.xlarge
+            - r3.2xlarge
+            - r3.4xlarge
+            - r3.8xlarge
+            - i2.xlarge
+            - i2.2xlarge
+            - i2.4xlarge
+            - i2.8xlarge
 
-  MaxSize:
-    Description: The maximum number of instances to launch
-    Type: Number
-    Default: 6
+    MaxSize:
+        Description: The maximum number of instances to launch
+        Type: Number
+        Default: 6
 
-  DesiredCapacity:
-    Description: The desired capacity after launch
-    Type: Number
-    Default: 3
+    DesiredCapacity:
+        Description: The desired capacity after launch
+        Type: Number
+        Default: 3
 
-  MinSize:
-    Description: The minumum number of instances to launch
-    Type: Number
-    Default: 1
+    MinSize:
+        Description: The minumum number of instances to launch
+        Type: Number
+        Default: 1
 
-  DockerHubUsername:
-    Type: String
-    Description: Your username on the Docker Hub
-    Default: ''
+    DockerHubUsername:
+        Type: String
+        Description: Your username on the Docker Hub
+        Default: ''
 
-  DockerHubEmail:
-    Type: String
-    Description: Your email address on the Docker Hub
-    Default: ''
+    DockerHubEmail:
+        Type: String
+        Description: Your email address on the Docker Hub
+        Default: ''
 
-  DockerHubPassword:
-    Type: String
-    Description: Your password on the Docker Hub
-    NoEcho: true
-    Default: ''
+    DockerHubPassword:
+        Type: String
+        Description: Your password on the Docker Hub
+        NoEcho: true
+        Default: ''
 
-  ECSCluster:
-    Type: String
-    Description: The name of the ECS cluster
+    ECSCluster:
+        Type: String
+        Description: The name of the ECS cluster
 
-  LogspoutTarget:
-    Type: String
-    Description: Optional. logspout destination eg papertrail endpoint.
-    Default: ""
+    LogspoutTarget:
+        Type: String
+        Description: Optional. logspout destination eg papertrail endpoint.
+        Default: ""
 
-  DatadogApiKey:
-    Type: String
-    Description: Optional. The datadog API key to push docker events into datadog.
-    Default: ""
+    DatadogApiKey:
+        Type: String
+        Description: Optional. The datadog API key to push docker events into datadog.
+        Default: ""
 
 Outputs:
-  StackType:
-    Value: "ecs-former::ecs-stack"
+    StackType:
+        Value: "ecs-former::ecs-stack"
 
-  ECSCluster:
-    Value: !Ref ECSCluster
+    ECSCluster:
+        Value: !Ref ECSCluster
 
-  SecurityGroup:
-    Value: !Ref SecurityGroup
+    SecurityGroup:
+        Value: !Ref SecurityGroup
 
-  LogGroupName:
-    Value: !Ref ECSLogGroup
+    LogGroupName:
+        Value: !Ref ECSLogGroup
 
 
 # amzn-ami-2016.09.a-amazon-ecs-optimized
 # See http://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_container_instance.html
 Mappings:
-  AWSRegionToAMI:
-    us-east-1: { AMIID: ami-1924770e }
-    us-east-2: { AMIID: ami-bd3e64d8 }
-    us-west-1: { AMIID: ami-7f004b1f }
-    us-west-2: { AMIID: ami-56ed4936 }
-    eu-west-1: { AMIID: ami-c8337dbb }
-    eu-central-1: { AMIID: ami-dd12ebb2 }
-    ap-northeast-1: { AMIID: ami-c8b016a9 }
-    ap-southeast-1: { AMIID: ami-6d22840e }
-    ap-southeast-2: { AMIID: ami-73407d10 }
+    AWSRegionToAMI:
+        us-east-1: { AMIID: ami-1924770e }
+        us-east-2: { AMIID: ami-bd3e64d8 }
+        us-west-1: { AMIID: ami-7f004b1f }
+        us-west-2: { AMIID: ami-56ed4936 }
+        eu-west-1: { AMIID: ami-c8337dbb }
+        eu-central-1: { AMIID: ami-dd12ebb2 }
+        ap-northeast-1: { AMIID: ami-c8b016a9 }
+        ap-southeast-1: { AMIID: ami-6d22840e }
+        ap-southeast-2: { AMIID: ami-73407d10 }
 
 Resources:
-  EC2InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Path: /
-      Roles: [ !Ref IAMRole ]
+    EC2InstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+            Path: /
+            Roles: [ !Ref IAMRole ]
 
-  IAMRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: [ ec2.amazonaws.com ]
-            Action: sts:AssumeRole
-      Path: /
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+    IAMRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service: [ ec2.amazonaws.com ]
+                      Action: sts:AssumeRole
+            Path: /
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
 
-  IAMPolicies:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: InstancePolicy
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Action:
-              - cloudwatch:PutMetricData
-              - cloudformation:DescribeStackResource
-              - ec2:DescribeTags
-            Resource: "*"
-          - Effect: Allow
-            Action:
-              - "logs:Create*"
-              - logs:PutLogEvents
-              - logs:DescribeLogStreams
-            Resource: "arn:aws:logs:*:*:*"
-      Roles:
-        - !Ref IAMRole
+    IAMPolicies:
+        Type: AWS::IAM::Policy
+        Properties:
+            PolicyName: InstancePolicy
+            PolicyDocument:
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - cloudwatch:PutMetricData
+                          - cloudformation:DescribeStackResource
+                          - ec2:DescribeTags
+                      Resource: "*"
+                    - Effect: Allow
+                      Action:
+                          - "logs:Create*"
+                          - logs:PutLogEvents
+                          - logs:DescribeLogStreams
+                      Resource: "arn:aws:logs:*:*:*"
+            Roles:
+                - !Ref IAMRole
 
-  ECSLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      RetentionInDays: 14
-      LogGroupName: !Ref 'AWS::StackName'
+    ECSLogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            RetentionInDays: 14
+            LogGroupName: !Ref 'AWS::StackName'
 
-  ECSAutoScalingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    Properties:
-      VPCZoneIdentifier:
-        - !Ref VpcPrivateSubnet1Id
-        - !Ref VpcPrivateSubnet2Id
-      LaunchConfigurationName: !Ref LaunchConfiguration
-      MinSize: !Ref MinSize
-      MaxSize: !Ref MaxSize
-      DesiredCapacity: !Ref DesiredCapacity
-      Tags:
-        - { Key: Name, Value: ecs-instance, PropagateAtLaunch: true }
-        - { Key: Role, Value: ecs-instance, PropagateAtLaunch: true }
-    CreationPolicy:
-      ResourceSignal:
-        Timeout: PT15M
-        Count: 1
-    UpdatePolicy:
-      AutoScalingRollingUpdate:
-        MinInstancesInService: 1
-        MaxBatchSize: 1
-        PauseTime: PT5M
-        WaitOnResourceSignals: true
+    ECSAutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            VPCZoneIdentifier:
+                - !Ref VpcPrivateSubnet1Id
+                - !Ref VpcPrivateSubnet2Id
+            LaunchConfigurationName: !Ref LaunchConfiguration
+            MinSize: !Ref MinSize
+            MaxSize: !Ref MaxSize
+            DesiredCapacity: !Ref DesiredCapacity
+            Tags:
+                - { Key: Name, Value: ecs-instance, PropagateAtLaunch: true }
+                - { Key: Role, Value: ecs-instance, PropagateAtLaunch: true }
+        CreationPolicy:
+            ResourceSignal:
+                Timeout: PT15M
+                Count: 1
+        UpdatePolicy:
+            AutoScalingRollingUpdate:
+                MinInstancesInService: 1
+                MaxBatchSize: 1
+                PauseTime: PT5M
+                WaitOnResourceSignals: true
 
-  LaunchConfiguration:
-    Type: AWS::AutoScaling::LaunchConfiguration
-    Properties:
-      AssociatePublicIpAddress: false
-      SecurityGroups: [ !Ref SecurityGroup ]
-      InstanceMonitoring: true
-      ImageId: !FindInMap [ AWSRegionToAMI, !Ref 'AWS::Region', AMIID ]
-      InstanceType: !Ref InstanceType
-      IamInstanceProfile: !Ref EC2InstanceProfile
-      KeyName: !Ref KeyName
-      UserData:
-        'Fn::Base64': !Sub |
-          #!/bin/bash -xve
-          yum install -y aws-cfn-bootstrap
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
-    Metadata:
-      AWS::CloudFormation::Init:
-        config:
-          files:
-            /etc/ecs/ecs.config:
-              content: !Sub |
-                ECS_CLUSTER=${ECSCluster}
-                ECS_ENGINE_AUTH_TYPE=docker
-                ECS_ENGINE_AUTH_DATA={"https://index.docker.io/v1/":{"username":"${DockerHubUsername}","password":"${DockerHubPassword}","email":"${DockerHubEmail}"}}
-              mode: "000600"
-              owner: root
-              group: root
-            /home/ec2-user/.dockercfg:
-              content: !Sub >
-                {"https://index.docker.io/v1/":{"username":"${DockerHubUsername}","password":"${DockerHubPassword}","email":"${DockerHubEmail}"}}
-              owner: ec2-user
-              group: ec2-user
-              mode: '00400'
-            /etc/cron.hourly/authorized_keys:
-              content: !Sub |
-                #!/bin/bash -eu
-                test -z "${AuthorizedUsersUrl}" && exit 0
-                curl --silent -f "${AuthorizedUsersUrl}" > /tmp/authorized_keys
-                mv /tmp/authorized_keys /home/ec2-user/.ssh/authorized_keys
-                chmod 600 /home/ec2-user/.ssh/authorized_keys
-                chown ec2-user: /home/ec2-user/.ssh/authorized_keys
-              mode: "000700"
-              owner: root
-              group: root
-          commands:
-            fetch-authorized-users:
-              command: /etc/cron.hourly/authorized_keys
+    LaunchConfiguration:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            AssociatePublicIpAddress: false
+            SecurityGroups: [ !Ref SecurityGroup ]
+            InstanceMonitoring: true
+            ImageId: !FindInMap [ AWSRegionToAMI, !Ref 'AWS::Region', AMIID ]
+            InstanceType: !Ref InstanceType
+            IamInstanceProfile: !Ref EC2InstanceProfile
+            KeyName: !Ref KeyName
+            UserData:
+                'Fn::Base64': !Sub |
+                    #!/bin/bash -xve
+                    yum install -y aws-cfn-bootstrap
+                    /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+                    /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+        Metadata:
+            AWS::CloudFormation::Init:
+                config:
+                    files:
+                        /etc/ecs/ecs.config:
+                            content: !Sub |
+                                ECS_CLUSTER=${ECSCluster}
+                                ECS_ENGINE_AUTH_TYPE=docker
+                                ECS_ENGINE_AUTH_DATA={"https://index.docker.io/v1/":{"username":"${DockerHubUsername}","password":"${DockerHubPassword}","email":"${DockerHubEmail}"}}
+                            mode: "000600"
+                            owner: root
+                            group: root
+                        /home/ec2-user/.dockercfg:
+                            content: !Sub >
+                                {"https://index.docker.io/v1/":{"username":"${DockerHubUsername}","password":"${DockerHubPassword}","email":"${DockerHubEmail}"}}
+                            owner: ec2-user
+                            group: ec2-user
+                            mode: '00400'
+                        /etc/cron.hourly/authorized_keys:
+                            content: !Sub |
+                                #!/bin/bash -eu
+                                test -z "${AuthorizedUsersUrl}" && exit 0
+                                curl --silent -f "${AuthorizedUsersUrl}" > /tmp/authorized_keys
+                                mv /tmp/authorized_keys /home/ec2-user/.ssh/authorized_keys
+                                chmod 600 /home/ec2-user/.ssh/authorized_keys
+                                chown ec2-user: /home/ec2-user/.ssh/authorized_keys
+                            mode: "000700"
+                            owner: root
+                            group: root
+                    commands:
+                        fetch-authorized-users:
+                            command: /etc/cron.hourly/authorized_keys
 
-            install-cloudwatch-logs:
-              command: !Sub |
-                #!/bin/bash
-                cat <<EOF > /etc/sysconfig/docker
-                OPTIONS="--log-driver=awslogs --log-opt awslogs-region=${AWS::Region} --log-opt awslogs-group=${ECSLogGroup}"
-                EOF
-                # @TODO: remove `docker ps` once the following bug is fixed:
-                # - https://github.com/aws/amazon-ecs-agent/issues/389
-                docker ps
-                service docker reload
+                        install-cloudwatch-logs:
+                            command: !Sub |
+                                #!/bin/bash
+                                cat <<EOF > /etc/sysconfig/docker
+                                OPTIONS="--log-driver=awslogs --log-opt awslogs-region=${AWS::Region} --log-opt awslogs-group=${ECSLogGroup}"
+                                EOF
+                                # @TODO: remove `docker ps` once the following bug is fixed:
+                                # - https://github.com/aws/amazon-ecs-agent/issues/389
+                                docker ps
+                                service docker reload
 
-            logspout:
-              test: !Sub "test -n '${LogspoutTarget}'"
-              command: !Sub |
-                #!/bin/bash -eu
-                /usr/bin/docker run -d \
-                  --name="logspout" \
-                  --restart=always \
-                  --hostname `hostname` \
-                  --volume=/var/run/docker.sock:/tmp/docker.sock \
-                  gliderlabs/logspout \
-                  ${LogspoutTarget} &> /home/ec2-user/logspout.boot.log
+                        logspout:
+                            test: !Sub "test -n '${LogspoutTarget}'"
+                            command: !Sub |
+                                #!/bin/bash -eu
+                                /usr/bin/docker run -d \
+                                    --name="logspout" \
+                                    --restart=always \
+                                    --hostname `hostname` \
+                                    --volume=/var/run/docker.sock:/tmp/docker.sock \
+                                    gliderlabs/logspout \
+                                    ${LogspoutTarget} &> /home/ec2-user/logspout.boot.log
 
-            datadog:
-              test: !Sub "test -n '${DatadogApiKey}'"
-              command: !Sub |
-                #!/bin/bash -eu
-                /usr/bin/docker run -d \
-                  --restart=always \
-                  --name dd-agent \
-                  --hostname `hostname` \
-                  -p 172.17.42.1:8125:8125/udp \
-                  -e 'TAGS=cluster:${ECSCluster}' \
-                  -e 'API_KEY=${DatadogApiKey}' \
-                  -v /var/run/docker.sock:/var/run/docker.sock \
-                  -v /proc/:/host/proc/:ro \
-                  -v /cgroup/:/host/sys/fs/cgroup:ro \
-                  datadog/docker-dd-agent &> /home/ec2-user/datadog.boot.log
+                        datadog:
+                            test: !Sub "test -n '${DatadogApiKey}'"
+                            command: !Sub |
+                                #!/bin/bash -eu
+                                /usr/bin/docker run -d \
+                                    --restart=always \
+                                    --name dd-agent \
+                                    --hostname `hostname` \
+                                    -p 172.17.42.1:8125:8125/udp \
+                                    -e 'TAGS=cluster:${ECSCluster}' \
+                                    -e 'API_KEY=${DatadogApiKey}' \
+                                    -v /var/run/docker.sock:/var/run/docker.sock \
+                                    -v /proc/:/host/proc/:ro \
+                                    -v /cgroup/:/host/sys/fs/cgroup:ro \
+                                    datadog/docker-dd-agent &> /home/ec2-user/datadog.boot.log
 
-  SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: ECS Instance security group
-      VpcId: !Ref VpcId
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: '1'
-          ToPort: '65535'
-          CidrIp: 10.0.0.0/16
+    SecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: ECS Instance security group
+            VpcId: !Ref VpcId
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: '1'
+                  ToPort: '65535'
+                  CidrIp: 10.0.0.0/16
 
-  SecurityGroupSelfReference:
-    Type: "AWS::EC2::SecurityGroupIngress"
-    DependsOn: "SecurityGroup"
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: '1'
-      ToPort: '65535'
-      SourceSecurityGroupId: !Ref SecurityGroup
+    SecurityGroupSelfReference:
+        Type: "AWS::EC2::SecurityGroupIngress"
+        DependsOn: "SecurityGroup"
+        Properties:
+            GroupId: !Ref SecurityGroup
+            IpProtocol: tcp
+            FromPort: '1'
+            ToPort: '65535'
+            SourceSecurityGroupId: !Ref SecurityGroup
