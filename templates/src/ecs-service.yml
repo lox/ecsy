@@ -20,9 +20,13 @@ Parameters:
         Type: String
         Description: The ECS cluster to attach the service to
 
-    ECSSecurityGroup:
+    ECSHostSecurityGroup:
         Type: AWS::EC2::SecurityGroup::Id
         Description: A security group that can access ECS instances
+
+    LoadBalancerSecurityGroup:
+        Type: AWS::EC2::SecurityGroup::Id
+        Description: A security group for the load balancer
 
     TaskFamily:
         Type: String
@@ -45,27 +49,39 @@ Parameters:
         Description: The port on the container to open
         Default: 80
 
-    ELBPort:
+    ListenerPort:
         Type: Number
         Description: The port on the load balancer to open
         Default: 80
 
-    HealthCheckUrl:
+    SSLCertificateArn:
         Type: String
-        Description: The URL to hit when doing healthchecks from the ELB
-        Default: /
-
-    SSLCertificateId:
-        Type: String
-        Description: An identifier of an SSL certificate to use for the ELB
+        Description: An ARN of an SSL certificate to use for the load balancer
         Default: ""
+
+    DesiredCount:
+        Type: Number
+        Description: The number of instances of the task to run
+        Default: 1
 
 Conditions:
     UseHttpListener:
-        !Equals [ !Ref SSLCertificateId, "" ]
+        !Equals [ !Ref SSLCertificateArn, "" ]
 
     UseHttpsListener:
-        !Not [ !Equals [ !Ref SSLCertificateId, "" ] ]
+        !Not [ !Equals [ !Ref SSLCertificateArn, "" ] ]
+
+    IsHttpsDefaultPort:
+        !And [
+            !Not [ !Equals [ !Ref SSLCertificateArn, "" ] ],
+            !Equals [ !Ref ListenerPort, "443" ],
+        ]
+
+    IsHttpDefaultPort:
+        !And [
+            !Equals [ !Ref SSLCertificateArn, "" ],
+            !Equals [ !Ref ListenerPort, "80" ],
+        ]
 
 Outputs:
     StackType:
@@ -77,8 +93,16 @@ Outputs:
     ECSLoadBalancer:
         Value: !If [
                 "UseHttpsListener",
-                !Sub "https://${HTTPSLoadBalancer.DNSName}:${ELBPort}",
-                !Sub "http://${HTTPLoadBalancer.DNSName}:${ELBPort}"
+                !If [
+                    IsHttpsDefaultPort,
+                    "https://${LoadBalancer.DNSName}",
+                    "https://${LoadBalancer.DNSName}:${ListenerPort}"
+                ],
+                !If [
+                    IsHttpDefaultPort,
+                    "http://${LoadBalancer.DNSName}",
+                    "http://${LoadBalancer.DNSName}:${ListenerPort}"
+                ]
             ]
 
     ECSService:
@@ -88,82 +112,47 @@ Outputs:
         Value: !Ref TaskFamily
 
 Resources:
-    ELBSecurityGroup:
-        Type: AWS::EC2::SecurityGroup
-        Properties:
-             GroupDescription : Security group for ELB in front of ECS
-             VpcId : !Ref VpcId
-             SecurityGroupIngress:
-                - IpProtocol: tcp
-                  FromPort: !Ref ELBPort
-                  ToPort: !Ref ELBPort
-                  CidrIp: 0.0.0.0/0
-                - IpProtocol: tcp
-                  FromPort: 443
-                  ToPort: 443
-                  CidrIp: 0.0.0.0/0
-
-    HTTPLoadBalancer:
-        Type: AWS::ElasticLoadBalancing::LoadBalancer
-        Condition: UseHttpListener
+    LoadBalancer:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
         Properties:
             Subnets:
                 - !Ref VpcPublicSubnet1Id
                 - !Ref VpcPublicSubnet2Id
             SecurityGroups:
-                - !Ref ELBSecurityGroup
-                - !Ref ECSSecurityGroup
-            Listeners:
-                - LoadBalancerPort: !Ref ELBPort
-                  InstancePort: !Ref ContainerPort
-                  Protocol: HTTP
-            HealthCheck:
-                Target: !Sub "HTTP:${ContainerPort}${HealthCheckUrl}"
-                HealthyThreshold: 2
-                UnhealthyThreshold: 10
-                Interval: 30
-                Timeout: 5
-            ConnectionDrainingPolicy:
-                Enabled: true
-                Timeout: 60
+                - !Ref LoadBalancerSecurityGroup
 
-    HTTPSLoadBalancer:
-        Type: AWS::ElasticLoadBalancing::LoadBalancer
-        Condition: UseHttpsListener
+    TargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
         Properties:
-            Subnets:
-                - !Ref VpcPublicSubnet1Id
-                - !Ref VpcPublicSubnet2Id
-            SecurityGroups:
-                - !Ref ELBSecurityGroup
-                - !Ref ECSSecurityGroup
-            Listeners:
-                - LoadBalancerPort: !Ref ELBPort
-                  InstancePort: !Ref ContainerPort
-                  Protocol: HTTP
-                - LoadBalancerPort: 443
-                  InstancePort: !Ref ContainerPort
-                  Protocol: HTTPS
-                  SSLCertificateId: !Ref SSLCertificateId
-            HealthCheck:
-                Target: !Sub "HTTP:${ContainerPort}${HealthCheckUrl}"
-                HealthyThreshold: 2
-                UnhealthyThreshold: 10
-                Interval: 30
-                Timeout: 5
-            ConnectionDrainingPolicy:
-                Enabled: true
-                Timeout: 60
+            VpcId: !Ref VpcId
+            Port: !Ref ContainerPort
+            Protocol: HTTP
+            HealthCheckIntervalSeconds: 10
+            HealthCheckProtocol: TCP
+            HealthCheckTimeoutSeconds: 5
+            HealthyThresholdCount: 2
+
+    LoadBalancerListener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            LoadBalancerArn: !Ref LoadBalancer
+            Port: !Ref ListenerPort
+            Protocol: !If [ "UseHttpsListener", HTTPS, HTTP ]
+            Certificates:
+                !If [ "UseHttpsListener", !Ref SSLCertificateArn, "AWS::NoValue" ]
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn: !Ref TargetGroup
 
     ECSService:
         Type: AWS::ECS::Service
         Properties:
             Cluster: !Ref ECSCluster
-            DesiredCount: 1
+            DesiredCount: !Ref DesiredCount
             LoadBalancers:
                 - ContainerName: !Ref ContainerName
                   ContainerPort: !Ref ContainerPort
-                  LoadBalancerName: !If [ "UseHttpsListener", !Ref HTTPSLoadBalancer, !Ref HTTPLoadBalancer ]
+                  TargetGroupArn: !Ref TargetGroup
             Role: !Ref ECSServiceRole
             TaskDefinition: !Ref TaskDefinition
 

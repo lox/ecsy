@@ -14,7 +14,7 @@ import (
 	"github.com/lox/ecsy/api"
 	"github.com/lox/ecsy/compose"
 	"github.com/lox/ecsy/templates"
-	"gopkg.in/alecthomas/kingpin.v2"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 func serviceStackName(cluster, taskFamily string) string {
@@ -22,7 +22,7 @@ func serviceStackName(cluster, taskFamily string) string {
 }
 
 func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
-	var cluster, projectName, healthCheck, certificateID string
+	var cluster, projectName, certificateARN string
 	var composeFiles []string
 	var disableRollback bool
 
@@ -36,13 +36,9 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		Default(currentDirName()).
 		StringVar(&projectName)
 
-	cmd.Flag("healthcheck", "Path to check for HTTP health check").
-		Default("/").
-		StringVar(&healthCheck)
-
-	cmd.Flag("ssl-certificate-id", "The identifier of the SSL certificate to associate with the service").
+	cmd.Flag("ssl-certificate-arn", "The ARN of the SSL certificate to associate with the service").
 		Default("").
-		StringVar(&certificateID)
+		StringVar(&certificateARN)
 
 	cmd.Flag("file", "The paths to docker-compose files to convert to service definitions").
 		Short('f').
@@ -118,14 +114,15 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 
 		ctx := api.CreateStackContext{
 			Params: map[string]string{
-				"VpcId":              network.VpcId,
-				"VpcPublicSubnet1Id": network.Subnet0Public,
-				"VpcPublicSubnet2Id": network.Subnet1Public,
-				"ECSCluster":         cluster,
-				"ECSSecurityGroup":   clusterOutput["SecurityGroup"],
-				"TaskFamily":         *resp.TaskDefinition.Family,
-				"TaskDefinition":     *resp.TaskDefinition.TaskDefinitionArn,
-				"SSLCertificateId":   certificateID,
+				"VpcId":                     network.VpcId,
+				"VpcPublicSubnet1Id":        network.Subnet0Public,
+				"VpcPublicSubnet2Id":        network.Subnet1Public,
+				"ECSCluster":                cluster,
+				"ECSHostSecurityGroup":      clusterOutput["ECSHostSecurityGroup"],
+				"LoadBalancerSecurityGroup": clusterOutput["LoadBalancerSecurityGroup"],
+				"TaskFamily":                *resp.TaskDefinition.Family,
+				"TaskDefinition":            *resp.TaskDefinition.TaskDefinitionArn,
+				"SSLCertificateArn":         certificateARN,
 			},
 			DisableRollback: disableRollback,
 		}
@@ -141,8 +138,7 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 			for _, mapping := range mappings {
 				ctx.Params["ContainerName"] = container
 				ctx.Params["ContainerPort"] = strconv.FormatInt(*mapping.ContainerPort, 10)
-				ctx.Params["HealthCheckUrl"] = healthCheck
-				ctx.Params["ELBPort"] = strconv.FormatInt(*mapping.HostPort, 10)
+				ctx.Params["ListenerPort"] = strconv.FormatInt(*mapping.HostPort, 10)
 			}
 		}
 
