@@ -1,17 +1,16 @@
 ECSy [![Build Status](https://travis-ci.org/lox/ecsy.svg?branch=master)](https://travis-ci.org/lox/ecsy)
 =============
 
-A tool for managing and deploying ECS clusters, because the [official one](https://github.com/aws/amazon-ecs-cli) is [terrible](#why-not-amazon-ecs-cli)
+A tool for creating and managing ECS clusters using CloudFormation.
 
-Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and making it possible for me to release it open-source. 
+Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and making it possible for me to release it open-source.
 
-## Features 
+## Features
 
  * CloudFormation based - Network stack, ECS cluster and ECS services
- * Support for managing ECS services with ELB loadbalancers
- * Designed for managing many ECS clusters 
+ * Support for managing ECS services with ALB loadbalancers
+ * Designed for managing many ECS clusters
  * Built-in support for common third-party services like Datadog
- * Derives ECS Task Definitions from docker-compose v2 definitions
 
 ## Installing
 
@@ -29,15 +28,18 @@ go get github.com/lox/ecsy
 # create an ecs cluster and supporting infrastructure (vpc, autoscale group, security groups, etc)
 ecsy create-cluster --cluster example --keyname lox --type m4.large --count 4
 
-# create an ecs task and service from a docker-compose file
-ecsy create-service --cluster example -f docker-compose.yml
+# registers a task definition from a task definition json file
+ecsy register-task --cluster example --family-name example-task -f taskdefinition.json
+
+# create a service from the registered task, along with an ALB with mappings for containers that need them
+ecsy create-service --cluster example --name example-service --family example-task
 ```
 
 ### Deploy a new release of your app to a service created above
 
 ```bash
 # Creates and deploys a new task with the helloworld container updated with a new image tag
-ecsy deploy --cluster example -f docker-compose.yml helloworld=:v2
+ecsy deploy --cluster example --service example-service "helloworld=:v2"
 ```
 
 ## Building
