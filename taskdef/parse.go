@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/buildkite/interpolate"
 	"github.com/ghodss/yaml"
 )
 
@@ -25,7 +26,7 @@ func ParseFile(file string, env []string) (*ecs.RegisterTaskDefinitionInput, err
 }
 
 type parser struct {
-	Env  []string
+	Env  map[string]string
 	Body []byte
 }
 
@@ -177,7 +178,7 @@ func (p parser) interpolateRecursive(copy, original reflect.Value) error {
 
 	// If it is a string interpolate it (yay finally we're doing what we came for)
 	case reflect.String:
-		interpolated, err := Interpolate(p.Env, original.Interface().(string))
+		interpolated, err := interpolate.Interpolate(p.Env, original.Interface().(string))
 		if err != nil {
 			return err
 		}
