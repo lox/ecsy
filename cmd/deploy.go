@@ -15,7 +15,7 @@ import (
 )
 
 func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
-	var cluster, taskName, imageTags string
+	var cluster, serviceName, taskName, imageTags string
 	var taskDefinitionFile string
 
 	cmd := app.Command("deploy", "Deploy updated task definitions to ECS")
@@ -26,6 +26,10 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 	cmd.Flag("name", "The name of the task").
 		Required().
 		StringVar(&taskName)
+
+	cmd.Flag("service", "The name of the ECS Service to deploy to").
+		Required().
+		StringVar(&serviceName)
 
 	cmd.Flag("file", "The paths to task definitions in yaml or json").
 		Short('f').
@@ -63,7 +67,7 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 						Options: map[string]*string{
 							"awslogs-group":         aws.String(logGroup),
 							"awslogs-region":        aws.String(os.Getenv("AWS_REGION")),
-							"awslogs-stream-prefix": aws.String(projectName),
+							"awslogs-stream-prefix": aws.String(serviceName),
 						},
 					}
 				}
@@ -82,7 +86,7 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 		}
 		log.Printf("Registered task definition %s:%d", *resp.TaskDefinition.Family, *resp.TaskDefinition.Revision)
 
-		serviceStack, err := api.FindServiceStack(svc.Cloudformation, cluster, projectName)
+		serviceStack, err := api.FindServiceStack(svc.Cloudformation, cluster, serviceName)
 		if err != nil {
 			return err
 		}

@@ -13,7 +13,7 @@ import (
 func ParseFile(file string, env []string) (*ecs.RegisterTaskDefinitionInput, error) {
 	body, err := ioutil.ReadFile(file)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
 	p := parser{

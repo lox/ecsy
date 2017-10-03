@@ -22,8 +22,8 @@ func serviceStackName(cluster, taskFamily string) string {
 }
 
 func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
-	var cluster, projectName, healthCheck, certificateID string
-	var composeFiles []string
+	var cluster, serviceName, healthCheck, certificateID string
+	var taskDefinitionFile string
 	var disableRollback bool
 
 	cmd := app.Command("create-service", "Create an ECS service for your app")
@@ -31,10 +31,9 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		Required().
 		StringVar(&cluster)
 
-	cmd.Flag("project-name", "The name of the Compose project").
-		Short('p').
-		Default(currentDirName()).
-		StringVar(&projectName)
+	cmd.Flag("service", "The name of the ECS Service to create").
+		Required().
+		StringVar(&serviceName)
 
 	cmd.Flag("healthcheck", "Path to check for HTTP health check").
 		Default("/").
@@ -44,16 +43,15 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		Default("").
 		StringVar(&certificateID)
 
-	cmd.Flag("file", "The paths to docker-compose files to convert to service definitions").
+	cmd.Flag("file", "The paths to task definitions in yaml or json").
 		Short('f').
-		Default("docker-compose.yml").
-		ExistingFilesVar(&composeFiles)
+		ExistingFileVar(&taskDefinitionFile)
 
 	cmd.Flag("disable-rollback", "Don't rollback created infrastructure if a failure occurs").
 		BoolVar(&disableRollback)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		log.Printf("Creating service %s on %s", projectName, cluster)
+		log.Printf("Creating service %s on %s", serviceName, cluster)
 
 		clusterStack, err := api.FindClusterStack(svc.Cloudformation, cluster)
 		if err != nil {
@@ -64,15 +62,13 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 				cluster)
 		}
 
-		stack, _ := api.FindServiceStack(svc.Cloudformation, cluster, projectName)
+		stack, _ := api.FindServiceStack(svc.Cloudformation, cluster, serviceName)
 		if stack != nil {
 			return fmt.Errorf("A service already exists for %q in cluster %q. Use `deploy` or `update-service`",
-				projectName, cluster)
+				serviceName, cluster)
 		}
 
-		log.Printf("Generating task definition from %v", composeFiles)
-
-		taskDefinitionInput, err := taskdef.Transform(composeFiles, projectName)
+		taskDefinitionInput, err := taskdef.ParseFile(taskDefinitionFile, os.Environ())
 		if err != nil {
 			return err
 		}
@@ -92,14 +88,14 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 						Options: map[string]*string{
 							"awslogs-group":         aws.String(logGroup),
 							"awslogs-region":        aws.String(os.Getenv("AWS_REGION")),
-							"awslogs-stream-prefix": aws.String(projectName),
+							"awslogs-stream-prefix": aws.String(serviceName),
 						},
 					}
 				}
 			}
 		}
 
-		log.Printf("Registering a task for %s", projectName)
+		log.Printf("Registering a task for %s", serviceName)
 		resp, err := svc.ECS.RegisterTaskDefinition(taskDefinitionInput)
 		if err != nil {
 			return err

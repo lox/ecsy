@@ -78,7 +78,7 @@ func ConfigureRunTask(app *kingpin.Application, svc api.Services) {
 		}
 
 		log.Printf("Registering a task for %s", taskName)
-		resp, err := svc.ECS.RegisterTaskDefinition(&taskDefinitionInput)
+		resp, err := svc.ECS.RegisterTaskDefinition(taskDefinitionInput)
 		if err != nil {
 			return err
 		}
