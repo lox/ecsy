@@ -1,35 +1,31 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/lox/ecsy/api"
-	"github.com/lox/ecsy/compose"
+	"github.com/lox/ecsy/taskdef"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 func ConfigureDumpTaskDefinition(app *kingpin.Application, svc api.Services) {
-	var composeFiles []string
+	var file string
 
-	cmd := app.Command("dump-task-definition", "Dump the task definition for a given set of docker-compose files")
+	cmd := app.Command("dump-task-definition", "Dump the task definition after environment interpolation")
 	cmd.Alias("dump")
 
-	cmd.Arg("files", "The docker-compose files to use").
+	cmd.Arg("file", "The task-definition file to use").
 		Required().
-		ExistingFilesVar(&composeFiles)
+		ExistingFileVar(&file)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		t := compose.Transformer{
-			ComposeFiles: composeFiles,
-		}
-
-		taskDefinitionInput, err := t.Transform()
+		taskDefinitionInput, err := taskdef.ParseFile(file, os.Environ())
 		if err != nil {
 			return err
 		}
 
-		log.Println(taskDefinitionInput.String())
-
+		fmt.Println(taskDefinitionInput.String())
 		return nil
 	})
 }

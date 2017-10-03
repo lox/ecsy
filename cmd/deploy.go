@@ -10,28 +10,26 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/lox/ecsy/api"
-	"github.com/lox/ecsy/compose"
+	"github.com/lox/ecsy/taskdef"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
-	var cluster, projectName, imageTags string
-	var composeFiles []string
+	var cluster, taskName, imageTags string
+	var taskDefinitionFile string
 
 	cmd := app.Command("deploy", "Deploy updated task definitions to ECS")
 	cmd.Flag("cluster", "The ECS cluster to deploy to").
 		Required().
 		StringVar(&cluster)
 
-	cmd.Flag("project-name", "The name of the project").
-		Short('p').
-		Default(currentDirName()).
-		StringVar(&projectName)
+	cmd.Flag("name", "The name of the task").
+		Required().
+		StringVar(&taskName)
 
-	cmd.Flag("file", "The docker-compose file to use").
+	cmd.Flag("file", "The paths to task definitions in yaml or json").
 		Short('f').
-		Default("docker-compose.yml").
-		ExistingFilesVar(&composeFiles)
+		ExistingFileVar(&taskDefinitionFile)
 
 	cmd.Arg("imagetags", "Tags in the form image=tag to apply to the task").
 		StringVar(&imageTags)
@@ -42,13 +40,7 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
-		log.Printf("Generating task definition from %#v", composeFiles)
-		t := compose.Transformer{
-			ComposeFiles: composeFiles,
-			ProjectName:  projectName,
-		}
-
-		taskDefinitionInput, err := t.Transform()
+		taskDefinitionInput, err := taskdef.ParseFile(taskDefinitionFile, os.Environ())
 		if err != nil {
 			return err
 		}

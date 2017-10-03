@@ -1,0 +1,99 @@
+{
+    "containerDefinitions": [
+        {
+            "essential": true,
+            "image": "${ECR_REPOSITORY}/myrepo/app",
+            "memory": 100,
+            "name": "app",
+            "portMappings": [
+                {
+                    "containerPort": 6543,
+                    "hostPort": 6543
+                }
+            ]
+        },
+        {
+            "essential": true,
+            "image": "${ECR_REPOSITORY}/micros/authentication",
+            "memory": 100,
+            "name": "authentication"
+        },
+        {
+            "essential": true,
+            "image": "${ECR_REPOSITORY}/micros/login",
+            "memory": 100,
+            "name": "login"
+        },
+        {
+            "environment": [
+                {
+                    "name": "C_FORCE_ROOT",
+                    "value": "1"
+                },
+                {
+                    "name": "BROKER_URL",
+                    "value": "amqp://xxx/"
+                },
+                {
+                    "name": "CONFIG",
+                    "value": "config/production.ini"
+                }
+            ],
+            "essential": true,
+            "image": "${ECR_REPOSITORY}/micros/mailer",
+            "memory": 100,
+            "name": "mailer"
+        },
+        {
+            "command": [
+                "celery"
+            ],
+            "environment": [
+                {
+                    "name": "BROKER_URL",
+                    "value": "amqp://xxx/"
+                },
+                {
+                    "name": "CONFIG",
+                    "value": "config/production.ini"
+                }
+            ],
+            "essential": true,
+            "image": "${ECR_REPOSITORY}/micros/mailer",
+            "memory": 100,
+            "name": "mailer_worker"
+        },
+        {
+            "environment": [
+                {
+                    "name": "SQLA_URL",
+                    "value": "${DATABASE_URL}"
+                }
+            ],
+            "essential": true,
+            "image": "${ECR_REPOSITORY}/micros/pwreset",
+            "memory": 100,
+            "name": "pwreset"
+        },
+        {
+            "essential": true,
+            "image": "rabbitmq",
+            "memory": 100,
+            "name": "rabbitmq"
+        },
+        {
+            "environment": [
+                {
+                    "name": "SQLA_URL",
+                    "value": "${DATABASE_URL}"
+                }
+            ],
+            "essential": true,
+            "image": "${ECR_REPOSITORY}/micros/user",
+            "memory": 100,
+            "name": "user"
+        }
+    ],
+    "family": "",
+    "volumes": []
+}

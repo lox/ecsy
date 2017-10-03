@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/lox/ecsy/api"
-	"github.com/lox/ecsy/compose"
+	"github.com/lox/ecsy/taskdef"
 	"github.com/lox/ecsy/templates"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -71,12 +71,8 @@ func ConfigureCreateService(app *kingpin.Application, svc api.Services) {
 		}
 
 		log.Printf("Generating task definition from %v", composeFiles)
-		t := compose.Transformer{
-			ComposeFiles: composeFiles,
-			ProjectName:  projectName,
-		}
 
-		taskDefinitionInput, err := t.Transform()
+		taskDefinitionInput, err := taskdef.Transform(composeFiles, projectName)
 		if err != nil {
 			return err
 		}

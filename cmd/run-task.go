@@ -12,13 +12,13 @@ import (
 	logs "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/lox/ecsy/api"
-	"github.com/lox/ecsy/compose"
+	"github.com/lox/ecsy/taskdef"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 func ConfigureRunTask(app *kingpin.Application, svc api.Services) {
-	var cluster, projectName, service string
-	var composeFiles []string
+	var taskName, cluster, service string
+	var taskDefinitionFile string
 	var commands []string
 
 	cmd := app.Command("run-task", "Run a once-off task")
@@ -28,25 +28,15 @@ func ConfigureRunTask(app *kingpin.Application, svc api.Services) {
 		Required().
 		StringVar(&cluster)
 
-	cmd.Flag("project-name", "The name of the Compose project").
-		Short('p').
-		Default(currentDirName()).
-		StringVar(&projectName)
+	cmd.Flag("name", "The name of the task").
+		Required().
+		StringVar(&taskName)
 
-	cmd.Flag("file", "The paths to docker-compose files to convert to task definitions").
+	cmd.Flag("file", "The paths to task definitions in yaml or json").
 		Short('f').
-		Default("docker-compose.yml").
-		ExistingFilesVar(&composeFiles)
-
-	cmd.Flag("service", "The name of compose service to run").
-		Short('s').
-		StringVar(&service)
-
-	cmd.Arg("commands", "Commands to override the default task command with").
-		StringsVar(&commands)
+		ExistingFileVar(&taskDefinitionFile)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		taskName := fmt.Sprintf("%s_%s_run", projectName, service)
 		log.Printf("Creating task %s on %s", taskName, cluster)
 
 		clusterStack, err := api.FindClusterStack(svc.Cloudformation, cluster)
@@ -58,14 +48,7 @@ func ConfigureRunTask(app *kingpin.Application, svc api.Services) {
 				cluster)
 		}
 
-		log.Printf("Generating task definition from %v", composeFiles)
-		t := compose.Transformer{
-			ComposeFiles: composeFiles,
-			ProjectName:  taskName,
-			Services:     []string{service},
-		}
-
-		taskDefinitionInput, err := t.Transform()
+		taskDefinitionInput, err := taskdef.ParseFile(taskDefinitionFile, os.Environ())
 		if err != nil {
 			return err
 		}
@@ -95,7 +78,7 @@ func ConfigureRunTask(app *kingpin.Application, svc api.Services) {
 		}
 
 		log.Printf("Registering a task for %s", taskName)
-		resp, err := svc.ECS.RegisterTaskDefinition(taskDefinitionInput)
+		resp, err := svc.ECS.RegisterTaskDefinition(&taskDefinitionInput)
 		if err != nil {
 			return err
 		}
