@@ -1,5 +1,4 @@
-ECSy [![Build Status](https://travis-ci.org/lox/ecsy.svg?branch=master)](https://travis-ci.org/lox/ecsy)
-=============
+# ECSy [![Build Status](https://travis-ci.org/lox/ecsy.svg?branch=master)](https://travis-ci.org/lox/ecsy)
 
 A tool for creating and managing ECS clusters using CloudFormation.
 
@@ -7,16 +6,16 @@ Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and 
 
 ## Features
 
- * CloudFormation based - Network stack, ECS cluster and ECS services
- * Support for managing ECS services with ALB loadbalancers
- * Designed for managing many ECS clusters
- * Built-in support for common third-party services like Datadog
+* CloudFormation based - Network stack, ECS cluster and ECS services
+* Support for managing ECS services with ALB loadbalancers
+* Designed for managing many ECS clusters
+* Built-in support for common third-party services like Datadog
 
 ## Installing
 
 Either download the binary from https://dl.equinox.io/lox/ecsy/stable, or install with golang:
 
-```
+```bash
 go get github.com/lox/ecsy
 ```
 
@@ -28,18 +27,15 @@ go get github.com/lox/ecsy
 # create an ecs cluster and supporting infrastructure (vpc, autoscale group, security groups, etc)
 ecsy create-cluster --cluster example --keyname lox --type m4.large --count 4
 
-# registers a task definition from a task definition json file
-ecsy register-task --cluster example --family-name example-task -f taskdefinition.json
-
-# create a service from the registered task, along with an ALB with mappings for containers that need them
-ecsy create-service --cluster example --name example-service --family example-task
+# create a service from the provided task definition
+ecsy create-service --cluster example --name example-service -f taskdefinition.json
 ```
 
 ### Deploy a new release of your app to a service created above
 
 ```bash
 # Creates and deploys a new task with the helloworld container updated with a new image tag
-ecsy deploy --cluster example --service example-service "helloworld=:v2"
+ecsy deploy --cluster example --service example-service -f taskdefinition.json "helloworld=:v2"
 ```
 
 ## Building

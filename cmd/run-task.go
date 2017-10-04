@@ -12,7 +12,7 @@ import (
 	logs "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/lox/ecsy/api"
-	"github.com/lox/ecsy/taskdef"
+	"github.com/lox/ecsy/taskdefinitions"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -48,7 +48,7 @@ func ConfigureRunTask(app *kingpin.Application, svc api.Services) {
 				cluster)
 		}
 
-		taskDefinitionInput, err := taskdef.ParseFile(taskDefinitionFile, os.Environ())
+		taskDefinitionInput, err := taskdefinitions.ParseFile(taskDefinitionFile, os.Environ())
 		if err != nil {
 			return err
 		}

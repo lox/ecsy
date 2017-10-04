@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/lox/ecsy/api"
-	"github.com/lox/ecsy/taskdef"
+	"github.com/lox/ecsy/taskdefinitions"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -20,7 +20,7 @@ func ConfigureDumpTaskDefinition(app *kingpin.Application, svc api.Services) {
 		ExistingFileVar(&file)
 
 	cmd.Action(func(c *kingpin.ParseContext) error {
-		taskDefinitionInput, err := taskdef.ParseFile(file, os.Environ())
+		taskDefinitionInput, err := taskdefinitions.ParseFile(file, os.Environ())
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-package taskdef
+package taskdefinitions
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ func ParseFile(file string, env []string) (*ecs.RegisterTaskDefinitionInput, err
 	}
 
 	p := parser{
-		Env:  env,
+		Env:  interpolate.EnvFromSlice(env),
 		Body: body,
 	}
 
