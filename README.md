@@ -1,23 +1,21 @@
-ECSy [![Build Status](https://travis-ci.org/lox/ecsy.svg?branch=master)](https://travis-ci.org/lox/ecsy)
-=============
+# ECSy [![Build Status](https://travis-ci.org/lox/ecsy.svg?branch=master)](https://travis-ci.org/lox/ecsy)
 
-A tool for managing and deploying ECS clusters, because the [official one](https://github.com/aws/amazon-ecs-cli) is [terrible](#why-not-amazon-ecs-cli)
+A tool for creating and managing ECS clusters using CloudFormation.
 
-Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and making it possible for me to release it open-source. 
+Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and making it possible for me to release it open-source.
 
-## Features 
+## Features
 
- * CloudFormation based - Network stack, ECS cluster and ECS services
- * Support for managing ECS services with ELB loadbalancers
- * Designed for managing many ECS clusters 
- * Built-in support for common third-party services like Datadog
- * Derives ECS Task Definitions from docker-compose v2 definitions
+* CloudFormation based - Network stack, ECS cluster and ECS services
+* Support for managing ECS services with ALB loadbalancers
+* Designed for managing many ECS clusters
+* Built-in support for common third-party services like Datadog
 
 ## Installing
 
 Either download the binary from https://dl.equinox.io/lox/ecsy/stable, or install with golang:
 
-```
+```bash
 go get github.com/lox/ecsy
 ```
 
@@ -29,15 +27,15 @@ go get github.com/lox/ecsy
 # create an ecs cluster and supporting infrastructure (vpc, autoscale group, security groups, etc)
 ecsy create-cluster --cluster example --keyname lox --type m4.large --count 4
 
-# create an ecs task and service from a docker-compose file
-ecsy create-service --cluster example -f docker-compose.yml
+# create a service from the provided task definition
+ecsy create-service --cluster example --name example-service -f taskdefinition.json
 ```
 
 ### Deploy a new release of your app to a service created above
 
 ```bash
 # Creates and deploys a new task with the helloworld container updated with a new image tag
-ecsy deploy --cluster example -f docker-compose.yml helloworld=:v2
+ecsy deploy --cluster example --service example-service -f taskdefinition.json "helloworld=:v2"
 ```
 
 ## Building

@@ -10,28 +10,30 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/lox/ecsy/api"
-	"github.com/lox/ecsy/compose"
+	"github.com/lox/ecsy/taskdefinitions"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
-	var cluster, projectName, imageTags string
-	var composeFiles []string
+	var cluster, serviceName, taskName, imageTags string
+	var taskDefinitionFile string
 
 	cmd := app.Command("deploy", "Deploy updated task definitions to ECS")
 	cmd.Flag("cluster", "The ECS cluster to deploy to").
 		Required().
 		StringVar(&cluster)
 
-	cmd.Flag("project-name", "The name of the project").
-		Short('p').
-		Default(currentDirName()).
-		StringVar(&projectName)
+	cmd.Flag("name", "The name of the task").
+		Required().
+		StringVar(&taskName)
 
-	cmd.Flag("file", "The docker-compose file to use").
+	cmd.Flag("service", "The name of the ECS Service to deploy to").
+		Required().
+		StringVar(&serviceName)
+
+	cmd.Flag("file", "The paths to task definitions in yaml or json").
 		Short('f').
-		Default("docker-compose.yml").
-		ExistingFilesVar(&composeFiles)
+		ExistingFileVar(&taskDefinitionFile)
 
 	cmd.Arg("imagetags", "Tags in the form image=tag to apply to the task").
 		StringVar(&imageTags)
@@ -42,13 +44,7 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 			return err
 		}
 
-		log.Printf("Generating task definition from %#v", composeFiles)
-		t := compose.Transformer{
-			ComposeFiles: composeFiles,
-			ProjectName:  projectName,
-		}
-
-		taskDefinitionInput, err := t.Transform()
+		taskDefinitionInput, err := taskdefinitions.ParseFile(taskDefinitionFile, os.Environ())
 		if err != nil {
 			return err
 		}
@@ -71,7 +67,7 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 						Options: map[string]*string{
 							"awslogs-group":         aws.String(logGroup),
 							"awslogs-region":        aws.String(os.Getenv("AWS_REGION")),
-							"awslogs-stream-prefix": aws.String(projectName),
+							"awslogs-stream-prefix": aws.String(serviceName),
 						},
 					}
 				}
@@ -90,7 +86,7 @@ func ConfigureDeploy(app *kingpin.Application, svc api.Services) {
 		}
 		log.Printf("Registered task definition %s:%d", *resp.TaskDefinition.Family, *resp.TaskDefinition.Revision)
 
-		serviceStack, err := api.FindServiceStack(svc.Cloudformation, cluster, projectName)
+		serviceStack, err := api.FindServiceStack(svc.Cloudformation, cluster, serviceName)
 		if err != nil {
 			return err
 		}
