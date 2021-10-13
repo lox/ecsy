@@ -1,24 +1,24 @@
 ECSy [![Build Status](https://travis-ci.org/lox/ecsy.svg?branch=master)](https://travis-ci.org/lox/ecsy)
 =============
 
+> 🚨 **This is very old and out-of-date**: Check out https://github.com/aws/copilot-cli. (Also I'm sorry AWS folks, I wasn't as kind as I should have been in those issues).
+
 A tool for managing and deploying ECS clusters, because the [official one](https://github.com/aws/amazon-ecs-cli) is [terrible](#why-not-amazon-ecs-cli)
 
-Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and making it possible for me to release it open-source. 
+Originally `99designs/ecs-cli`, many thanks to those guys for being awesome and making it possible for me to release it open-source.
 
-## Features 
+## Features
 
  * CloudFormation based - Network stack, ECS cluster and ECS services
  * Support for managing ECS services with ELB loadbalancers
- * Designed for managing many ECS clusters 
+ * Designed for managing many ECS clusters
  * Built-in support for common third-party services like Datadog
  * Derives ECS Task Definitions from docker-compose v2 definitions
 
 ## Installing
 
-Either download the binary from https://dl.equinox.io/lox/ecsy/stable, or install with golang:
-
 ```
-go get github.com/lox/ecsy
+go install github.com/lox/ecsy@latest
 ```
 
 ## Usage
