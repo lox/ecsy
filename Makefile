@@ -5,12 +5,8 @@ TEMPLATES=templates/src/ecs-service.yml templates/src/ecs-stack.yml templates/sr
 
 .PHONY: test setup build install clean templates
 
-test:
-	govendor test +local
-
 setup:
-	go get -u github.com/kardianos/govendor
-	go get -u github.com/mjibson/esc
+	go get -u github.com/mjibson/esc@latest
 
 build: templates
 	go build -ldflags="$(FLAGS)" $(PREFIX)
@@ -26,13 +22,3 @@ validate:
 
 clean:
 	rm templates/static.go
-
-release:
-	equinox release \
-		--version=$(VERSION) \
-		--platforms='darwin_amd64 linux_amd64' \
-		--signing-key=$(EQUINOX_KEY) \
-		--app=app_3dH3rVQXD5e \
-		--token=$(EQUINOX_TOKEN) \
-		-- -ldflags='-X main.Version=$(VERSION) -s -w' \
-		$(PREFIX)

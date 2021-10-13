@@ -12,6 +12,10 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/mattn/go-colorable v0.0.7 // indirect
 	github.com/mattn/go-isatty v0.0.0-20161123143637-30a891c33c7c // indirect
-	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980
+	github.com/pkg/errors v0.9.1 // indirect
+	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
+	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/sys v0.0.0-20211013075003-97ac67df715c // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
